@@ -18,6 +18,7 @@ import {
 } from "./engine.js";
 import { CLASSES } from "./data/families.js";
 import { PROFILE_FIELDS, PROFILE_DEFAULTS, PROFILE_LABELS, profileWarnings } from "./data/scoping.js";
+import { KINDS, PHASES, PHASE_MAP, PROCESS_MAP, PROCESS_NODES, PROCESS_START, nextIds } from "./data/process.js";
 import { buildReportModel, esc, reportToCSV, reportToHTML, reportToMarkdown } from "./report.js";
 import { SAMPLE_TEXT, sampleState } from "./sample.js";
 import { KEYS, LOCK_OPTIONS, MARKINGS, MODES, PolicyError, Store, modeAllowed } from "./storage.js";
@@ -134,6 +135,7 @@ function viewHome() {
       <div class="actions">
         <a class="btn primary" href="#/profile">${started ? "Continue assessment" : "Start an assessment"}</a>
         <a class="btn" href="#/library">Browse the Gemba library</a>
+        <a class="btn" href="#/process">Explore the assessment process</a>
       </div>
     </div>
     ${started ? `<div class="hero-stats card">
@@ -453,6 +455,120 @@ function viewControl(id) {
   </div>`;
 }
 
+// ------------------------------------------------------------------ assessment process
+
+// The path taken through the decision tree in this tab: [{ id, choice }].
+// Kept in memory only; it contains no assessment data.
+let procPath = [];
+let procPending = null;
+
+function trackPath(id) {
+  const p = procPending;
+  procPending = null;
+  if (p?.jump !== undefined) procPath = procPath.slice(0, p.jump + 1);
+  else if (!p && procPath.at(-2)?.id === id) { procPath.pop(); return; } // browser Back
+  const last = procPath.at(-1);
+  if (last?.id === id) return; // re-render of the same step
+  if (last && p?.from === last.id) last.choice = p.choice;
+  procPath.push({ id });
+  if (procPath.length > 100) procPath = procPath.slice(-100);
+}
+
+const procList = (items, tag = "ul") => `<${tag}>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</${tag}>`;
+const kindBadge = (n) => `<span class="kind kind-${n.kind}"><span aria-hidden="true">${KINDS[n.kind].icon}</span> ${KINDS[n.kind].label}</span>`;
+
+function procDetails(n) {
+  const block = (title, body, cls = "") => `<section class="proc-sec ${cls}"><h3 class="h5">${title}</h3>${body}</section>`;
+  const parts = [];
+  if (n.who?.length) parts.push(block("Who", procList(n.who)));
+  if (n.inputs?.length) parts.push(block("Inputs", procList(n.inputs)));
+  if (n.tasks?.length) parts.push(block(n.kind === "outcome" ? "What to do" : "Tasks", procList(n.tasks, "ol"), "wide"));
+  if (n.outputs?.length) parts.push(block("Outputs and artefacts", procList(n.outputs)));
+  if (n.evidence?.length) parts.push(block("Evidence", procList(n.evidence)));
+  if (n.pitfalls?.length) parts.push(block("Watch out", procList(n.pitfalls), "warn"));
+  if (n.controls?.length) parts.push(block("Related controls", `<ul class="proc-ctls">${n.controls.map((id) => `<li><a href="#/control/${id}"><span class="cid">${id}</span> ${esc(CONTROL_MAP[id]?.title ?? "")}</a></li>`).join("")}</ul>`));
+  if (n.refs?.length) parts.push(block("References", procList(n.refs)));
+  return parts.length ? `<div class="proc-grid">${parts.join("")}</div>` : "";
+}
+
+function procMap(currentId) {
+  const visited = new Set(procPath.map((p) => p.id));
+  return PHASES.map((ph) => {
+    const nodes = PROCESS_NODES.filter((n) => n.phase === ph.id);
+    return `<section class="proc-map-phase"><h3 class="h5">${esc(ph.name)} <span class="muted small">${esc(ph.ref)}</span></h3>
+      <ul class="proc-map-list">${nodes.map((n) => {
+        const edges = n.kind === "question"
+          ? `<ul class="proc-edges">${n.options.map((o) => `<li>${esc(o.label)} → <a href="#/process/${o.next}">${esc(PROCESS_MAP[o.next].title)}</a></li>`).join("")}</ul>`
+          : n.next ? `<p class="proc-edges">Then → <a href="#/process/${n.next}">${esc(PROCESS_MAP[n.next].title)}</a></p>` : "";
+        const state = n.id === currentId ? " is-current" : visited.has(n.id) ? " is-visited" : "";
+        return `<li class="proc-map-item${state}"><a class="proc-chip kind-${n.kind}" href="#/process/${n.id}" ${n.id === currentId ? 'aria-current="location"' : ""}><span aria-hidden="true">${KINDS[n.kind].icon}</span> ${esc(n.title)}<span class="sr-only">, ${KINDS[n.kind].label.toLowerCase()}${state === " is-visited" ? ", visited" : ""}</span></a>${edges}</li>`;
+      }).join("")}</ul></section>`;
+  }).join("");
+}
+
+function viewProcess(id) {
+  const n = PROCESS_MAP[id || PROCESS_START];
+  if (!n) return `<div class="page-head"><h1>Assessment process</h1></div><p>Unknown step ${esc(id)}. <a href="#/process">Start the decision tree</a></p>`;
+  if (!id) procPath = []; // the tree's entry point always starts a new path
+  trackPath(n.id);
+  const phase = PHASE_MAP[n.phase];
+  const phaseIndex = PHASES.indexOf(phase);
+  const prev = procPath.at(-2);
+  const total = PROCESS_NODES.length;
+  const questions = PROCESS_NODES.filter((x) => x.kind === "question").length;
+
+  let body = "";
+  if (n.kind === "question") {
+    body = `<h3 class="h5" id="proc-choose">Choose an answer</h3>
+      <ul class="proc-options" aria-labelledby="proc-choose">${n.options.map((o, i) => `<li><a class="proc-opt" href="#/process/${o.next}" data-from="${n.id}" data-choice="${i}">
+        <strong>${esc(o.label)}</strong><span>${esc(o.help)}</span><span class="proc-to"><span aria-hidden="true">→</span> ${esc(PROCESS_MAP[o.next].title)}</span></a></li>`).join("")}</ul>`;
+  }
+  const actions = [];
+  if (n.next) actions.push(`<a class="btn primary" href="#/process/${n.next}" data-from="${n.id}">Continue: ${esc(PROCESS_MAP[n.next].title)} <span aria-hidden="true">→</span></a>`);
+  if (n.app) actions.push(`<a class="btn" href="${n.app.href}">${esc(n.app.label)}</a>`);
+  if (prev) actions.push(`<a class="btn" href="#/process/${prev.id}" data-path="${procPath.length - 2}"><span aria-hidden="true">←</span> Back<span class="sr-only">: ${esc(PROCESS_MAP[prev.id].title)}</span></a>`);
+  if (n.kind === "outcome") actions.push(`<a class="btn primary" href="#/process" data-path="-1">Start again</a>`);
+
+  return `
+  <div class="page-head">
+    <h1>ITSG-33 assessment process</h1>
+    <p class="lead">An interactive decision tree of the ITSG-33 security risk management and assessment process, from defining security needs to authorization, monitoring and disposal. Answer each decision to follow your path; every activity lists who is involved, inputs, tasks, outputs, related controls and references.</p>
+  </div>
+  <nav class="proc-phases" aria-label="Process phases"><ol>${PHASES.map((p, i) => {
+    const first = PROCESS_NODES.find((x) => x.phase === p.id);
+    const cls = i === phaseIndex ? "is-current" : "";
+    return `<li><a class="${cls}" href="#/process/${first.id}" ${i === phaseIndex ? 'aria-current="step"' : ""}>${esc(p.name)}</a></li>`;
+  }).join("")}</ol></nav>
+  <div class="proc">
+    <section class="card proc-node kind-${n.kind}" id="proc-node" aria-labelledby="proc-title">
+      <p class="eyebrow">${esc(phase.name)} · ${esc(phase.ref)}</p>
+      <p class="proc-kind">${kindBadge(n)}</p>
+      <h2 id="proc-title" tabindex="-1">${esc(n.title)}</h2>
+      <p class="proc-summary">${esc(n.summary)}</p>
+      ${body}
+      ${procDetails(n)}
+      ${actions.length ? `<div class="actions">${actions.join("")}</div>` : ""}
+    </section>
+    <aside class="card proc-path" aria-labelledby="proc-path-h">
+      <h2 class="h5" id="proc-path-h">Your path</h2>
+      <ol class="proc-trail">${procPath.map((p, i) => {
+        const pn = PROCESS_MAP[p.id];
+        const choice = p.choice !== undefined && pn.kind === "question" ? `<span class="proc-choice">${esc(pn.options[p.choice]?.label ?? "")}</span>` : "";
+        return i === procPath.length - 1
+          ? `<li aria-current="step"><strong>${esc(pn.title)}</strong></li>`
+          : `<li><a href="#/process/${p.id}" data-path="${i}">${esc(pn.title)}</a>${choice}</li>`;
+      }).join("")}</ol>
+      ${procPath.length > 1 ? `<a class="btn small" href="#/process" data-path="-1">Start over</a>` : `<p class="muted small">Your answers appear here as you go. Nothing is saved.</p>`}
+    </aside>
+  </div>
+  <section class="card proc-map-wrap">
+    <h2 class="h4">The whole decision tree</h2>
+    <p class="muted small">${total} steps across ${PHASES.length} phases, with ${questions} decisions. <span aria-hidden="true">${KINDS.question.icon}</span> decision, <span aria-hidden="true">${KINDS.step.icon}</span> activity, <span aria-hidden="true">${KINDS.outcome.icon}</span> end point. Select any step to jump to it.</p>
+    <details class="proc-map"><summary>Show every step and where it leads</summary>${procMap(n.id)}</details>
+  </section>
+  <p class="small muted">Paraphrased from ITSG-33 Annexes 1 and 2 and related Government of Canada guidance. Your department's security assessment and authorization process takes precedence; check the official CCCS publications for authoritative wording.</p>`;
+}
+
 function viewReport() {
   const m = buildReportModel(state, { marking: marking()?.banner });
   return `
@@ -742,7 +858,7 @@ let libCls = "";
 // "none" leaves it (first load); rerender() restores focus to the same control.
 function route({ focus = "heading" } = {}) {
   const [, view = "", a, b] = location.hash.replace(/^#/, "").split("/");
-  let nav = { "": "home", profile: "profile", review: "review", assess: "assess", report: "report", library: "library", control: "library", security: "security" }[view] ?? "home";
+  let nav = { "": "home", profile: "profile", review: "review", assess: "assess", report: "report", library: "library", control: "library", process: "process", security: "security" }[view] ?? "home";
   if (!state) nav = store.status() === "locked" ? "locked" : "setup";
   document.querySelectorAll("[data-nav]").forEach((el) => {
     el.classList.toggle("active", el.dataset.nav === nav);
@@ -760,11 +876,13 @@ function route({ focus = "heading" } = {}) {
     case "report": html = viewReport(); break;
     case "library": html = viewLibrary(libQuery, libCls); break;
     case "control": html = viewControl(a); break;
+    case "process": html = viewProcess(a); break;
     default: html = viewHome();
   }
   app.innerHTML = html;
-  const TITLES = { home: "", setup: "Set up storage", locked: "Locked", security: "Data and security" };
-  const t = TITLES[nav] ?? `${nav[0].toUpperCase()}${nav.slice(1)}`;
+  const TITLES = { home: "", setup: "Set up storage", locked: "Locked", security: "Data and security", process: "Assessment process" };
+  let t = TITLES[nav] ?? `${nav[0].toUpperCase()}${nav.slice(1)}`;
+  if (nav === "process" && a && PROCESS_MAP[a]) t = `${PROCESS_MAP[a].title} · ${t}`;
   document.title = `${t ? `${t} · ` : ""}ITSG-33 Compliance Navigator`;
   const h1 = app.querySelector("h1");
   if (h1) h1.tabIndex = -1;
@@ -772,6 +890,11 @@ function route({ focus = "heading" } = {}) {
     const card = document.getElementById(`c-${b}`);
     card?.scrollIntoView({ block: "start" });
     if (focus === "heading") card?.querySelector("summary").focus({ preventScroll: true });
+  } else if (view === "process" && a && PROCESS_MAP[a]) {
+    // Moving through the tree: focus the step's heading, below the phase bar.
+    const h2 = document.getElementById("proc-title");
+    window.scrollTo(0, 0);
+    if (focus === "heading") h2.focus();
   } else {
     window.scrollTo(0, 0);
     if (focus === "heading") h1?.focus({ preventScroll: true });
@@ -911,6 +1034,13 @@ app.addEventListener("click", (e) => {
   if (errLink) {
     e.preventDefault();
     document.getElementById(errLink.dataset.focus)?.focus();
+    return;
+  }
+  const proc = e.target.closest("a[data-from], a[data-path]");
+  if (proc) {
+    procPending = proc.dataset.path !== undefined
+      ? { jump: Number(proc.dataset.path) }
+      : { from: proc.dataset.from, choice: proc.dataset.choice !== undefined ? Number(proc.dataset.choice) : undefined };
     return;
   }
   const tab = e.target.closest("[data-tab]");

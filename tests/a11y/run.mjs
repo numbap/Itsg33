@@ -90,6 +90,13 @@ const APP_STATES = [
   { id: "control", name: "Gemba page for a control (SC-28)", url: "/#/control/SC-28" },
   { id: "library", name: "Gemba library", url: "/#/library" },
   { id: "report", name: "4. Compliance report", url: "/#/report" },
+  { id: "process", name: "Assessment process decision tree, first decision", url: "/#/process" },
+  { id: "process-step", name: "Assessment process, activity after one decision, with the whole tree expanded", url: "/#/process",
+    setup: async (page) => {
+      await page.click('a.proc-opt[data-choice="1"]');
+      await page.waitForSelector("#proc-node.kind-step");
+      await page.click(".proc-map > summary");
+    } },
   { id: "security", name: "Data and security, unencrypted Unclassified storage", url: "/#/security" },
   { id: "setup", name: "First-run storage setup", url: "/", storage: "fresh" },
   { id: "setup-error", name: "First-run storage setup, with a validation error", url: "/", storage: "fresh",

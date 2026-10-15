@@ -11,13 +11,15 @@ A browser app for reviewing a software product against the **ITSG-33** security 
 
 The **Gemba library** lets you browse all 133 controls (17 families, including the generated `-1` policy controls) without running an assessment.
 
+The **Assessment process** page is an interactive decision tree of the ITSG-33 process, from departmental profiles (Annex 1) through the information system life cycle (Annex 2): defining security needs and categorization, profile selection and tailoring, hosting and cloud inheritance, privacy, procurement or secure development, design review, installation, the control-by-control security assessment, residual risk, authorization (ATO, interim ATO, denial), continuous monitoring, change and incident handling, and disposal. Each decision explains its options. Each activity lists who is involved, inputs, tasks, outputs, evidence, pitfalls, related controls (linked to their Gemba pages) and references, and links to the part of the app that helps. Your path through the tree is kept in memory only.
+
 ## Running
 
 The app has no runtime dependencies and no build step.
 
 ```sh
 npm start        # serves on http://localhost:8080 (PORT to override)
-npm test         # unit tests: engine, data integrity, report output, VPAT generator
+npm test         # unit tests: engine, data integrity, process tree, report output, VPAT generator
 ```
 
 Any static host (for example GitHub Pages) also works. ES modules need to be served over HTTP; opening `index.html` directly from `file://` will not load them.
@@ -78,6 +80,7 @@ The current evaluation is a **self-assessment by an AI assistant**. It has not b
 | `js/data/families.js` | 17 control families, classes, intent and Gemba tips |
 | `js/data/controls-*.js` | Controls with Gemba content, questions, analyzer keywords and scope rules |
 | `js/data/scoping.js` | Scoping interview and profile warnings |
+| `js/data/process.js` | Assessment process decision tree (phases, decisions, activities) |
 | `js/engine.js` | Applicability, status derivation, scoring, risk, statements, document analysis, design levers (pure functions) |
 | `js/report.js` | Report model rendered to HTML, Markdown and CSV |
 | `js/app.js` | UI: routing, views, events, focus management and live announcements; state kept in `localStorage` |

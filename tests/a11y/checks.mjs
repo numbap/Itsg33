@@ -246,7 +246,7 @@ export async function routeFocus(page, base) {
   await page.goto(`${base}/#/`);
   const failures = [];
   const titles = new Set();
-  for (const nav of ["profile", "review", "assess", "report", "library", "security", "home"]) {
+  for (const nav of ["profile", "review", "assess", "report", "library", "process", "security", "home"]) {
     await page.focus(`[data-nav="${nav}"]`);
     await page.keyboard.press("Enter");
     await page.waitForTimeout(150);
