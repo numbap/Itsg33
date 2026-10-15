@@ -21,6 +21,8 @@
       - /url: "#/report"
     - link "Gemba library":
       - /url: "#/library"
+    - link "Assessment process":
+      - /url: "#/process"
     - link "Data & security":
       - /url: "#/security"
   - button "Dark mode"

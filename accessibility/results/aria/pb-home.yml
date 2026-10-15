@@ -21,6 +21,8 @@
       - /url: "#/report"
     - link "Gemba library":
       - /url: "#/library"
+    - link "Assessment process":
+      - /url: "#/process"
     - link "Data & security":
       - /url: "#/security"
   - button "Lock"
@@ -44,6 +46,8 @@
     - /url: "#/profile"
   - link "Browse the Gemba library":
     - /url: "#/library"
+  - link "Explore the assessment process":
+    - /url: "#/process"
   - heading "CaseTrack Online" [level=2]
   - img "Progress 4%": 4%
   - strong: Progress
