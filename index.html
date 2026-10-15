@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ITSG-33 Compliance Navigator</title>
+  <meta name="description" content="Review a software product against ITSG-33 security controls, walk the Gemba for each requirement, and generate a compliance report.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%23b8202f'/><path d='m10 16 4 4 8-8' stroke='white' stroke-width='3' fill='none'/></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip" href="#app">Skip to content</a>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z" fill="var(--accent)"/><path d="m10 16 4 4 8-8" stroke="#fff" stroke-width="3" fill="none"/></svg>
+      <span>ITSG-33 <strong>Compliance Navigator</strong></span>
+    </div>
+    <nav class="steps" aria-label="Main">
+      <a href="#/" data-nav="home">Start</a>
+      <a href="#/profile" data-nav="profile"><b>1</b> Scope</a>
+      <a href="#/review" data-nav="review"><b>2</b> Review docs</a>
+      <a href="#/assess" data-nav="assess"><b>3</b> Questionnaire</a>
+      <a href="#/report" data-nav="report"><b>4</b> Report</a>
+      <a href="#/library" data-nav="library">Gemba library</a>
+    </nav>
+    <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+  </header>
+  <main id="app" tabindex="-1"></main>
+  <footer class="foot">
+    Self-assessment aid based on paraphrased ITSG-33 Annex 3A controls. Not an official Government of Canada or CCCS tool.
+    Your answers are stored only in this browser.
+  </footer>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "itsg33-compliance-navigator",
+  "version": "1.0.0",
+  "description": "Review a software product against ITSG-33 (PBMM) controls, walk the Gemba for each requirement, and generate a compliance report.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "license": "MIT"
+}

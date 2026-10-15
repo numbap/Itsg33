@@ -1,0 +1,838 @@
+// Technical class controls: AC, AU, IA, SC.
+// Each control carries "Gemba walk" guidance:
+//   look          - go and see: where to look and what evidence to ask for
+//   eliminate     - design choices that remove or shrink the requirement
+//   consequences  - what happens if the requirement is not met
+//   mitigations   - compensating measures when it cannot be fully met
+//   describe      - starting point for an implementation statement
+//   questions     - questionnaire items (answered yes / partial / no / unknown)
+//   keywords      - terms the document review looks for
+//   scope         - applicability rules evaluated against the product profile
+
+export const TECHNICAL = [
+  // ---------------------------------------------------------------- AC
+  {
+    id: "AC-2", title: "Account Management", sev: "high",
+    summary: "Manage the full lifecycle of accounts (request, approval, creation, change, disabling, review, removal), including privileged, shared, service and temporary accounts.",
+    look: [
+      "Export the account list from the admin console. Count accounts with no login in the last 90 days.",
+      "Pick someone who left recently and check their account was disabled on their last day.",
+      "Search for generic accounts (admin, test, support, training) and service accounts that can log in interactively.",
+      "Ask for the last access review record: who reviewed, what was removed and when.",
+    ],
+    eliminate: [
+      "Federate sign-in to the departmental IdP and provision with SCIM so joiners, movers and leavers are driven by the HR-fed directory. The product then has no independent account lifecycle to manage.",
+      "Take roles from IdP group claims instead of assigning roles inside the product, so access reviews happen in one place.",
+      "Replace shared admin accounts with named accounts and just-in-time elevation.",
+      "Use managed or workload identities for service-to-service calls so no service account passwords exist at all.",
+    ],
+    consequences: [
+      "Orphaned accounts of departed staff or contractors stay usable, which is a classic path to unauthorized access to Protected B data.",
+      "Without reviews, privilege creep builds up and separation of duties quietly erodes.",
+      "Shared accounts break accountability: during an incident you cannot prove who did what.",
+    ],
+    mitigations: [
+      "Automatically disable accounts after a period of inactivity (e.g. 30 to 90 days) as an interim safety net.",
+      "Reconcile product accounts monthly against the HR departures list.",
+      "Alert on any login by a dormant or recently disabled account.",
+      "Restrict shared accounts to break-glass use with sealed credentials that are rotated after each use.",
+    ],
+    describe: "{product} accounts are provisioned and removed automatically from {idp}. Access is granted only after the business owner approves the request. Accounts inactive for 90 days are disabled automatically, and the {org} system owner reviews all privileged accounts quarterly.",
+    questions: [
+      "Are accounts created only after a documented and approved request?",
+      "Are accounts of departing staff disabled within a defined timeframe (e.g. same business day)?",
+      "Are all accounts, especially privileged ones, reviewed at a defined frequency?",
+      "Are shared, guest and service accounts prohibited or documented and tightly controlled?",
+      "Are inactive accounts disabled automatically?",
+    ],
+    keywords: ["account management", "provisioning", "deprovision", "scim", "joiner", "leaver", "access review", "inactive account", "dormant account", "user lifecycle", "recertification"],
+    scope: [
+      { when: { identity: "none" }, status: "shared", reason: "No interactive users; scope narrows to service and administrator accounts." },
+    ],
+  },
+  {
+    id: "AC-3", title: "Access Enforcement", sev: "high",
+    summary: "Enforce approved authorizations for access to information and system resources, on every request.",
+    look: [
+      "Log in as a low-privilege user and try to open an admin URL or another user's record by changing an ID in the address bar.",
+      "Read the authorization code path: is the check done on the server for every API call, or only by hiding buttons in the UI?",
+      "Ask for the role-permission matrix and compare it against what the product actually allows.",
+    ],
+    eliminate: [
+      "Centralize authorization in one policy layer (middleware or policy engine) so every endpoint is covered by default, rather than relying on each developer to add checks.",
+      "Use deny-by-default routing: new endpoints are inaccessible until a policy is attached.",
+      "Partition data per tenant or per program at the storage layer so a missed check cannot cross the boundary.",
+    ],
+    consequences: [
+      "Broken access control (insecure direct object references, privilege escalation) is the most common critical web application flaw; one missed check can expose every record.",
+      "A single user could read or modify Protected B information outside their need-to-know, triggering a privacy breach.",
+    ],
+    mitigations: [
+      "Add automated authorization tests that call every endpoint with each role.",
+      "Put a web application firewall rule or API gateway policy in front of sensitive endpoints.",
+      "Log and alert on access-denied spikes, which often reveal probing.",
+    ],
+    describe: "{product} enforces role-based access control on the server side for every request. Roles are derived from {idp} group membership and mapped to a documented permission matrix. Access is denied by default unless an explicit permission exists.",
+    questions: [
+      "Is authorization enforced server-side on every request (not only hidden in the UI)?",
+      "Is there a documented role and permission matrix?",
+      "Is access denied by default when no rule grants it?",
+      "Are authorization checks covered by automated tests?",
+    ],
+    keywords: ["rbac", "role-based", "access control", "authorization", "authorisation", "permission", "abac", "least privilege", "deny by default", "entitlement"],
+  },
+  {
+    id: "AC-4", title: "Information Flow Enforcement", sev: "medium",
+    summary: "Control where information is allowed to flow within the system and between interconnected systems.",
+    look: [
+      "Draw (or ask for) a data flow diagram. Mark every arrow that crosses a network zone or leaves the system.",
+      "Check outbound network rules: can the application servers reach any internet host, or only approved destinations?",
+      "Ask where exports, reports and API responses can be sent.",
+    ],
+    eliminate: [
+      "Deploy into a private network with egress allow-listing so only explicitly approved flows are possible.",
+      "Expose integrations only through an API gateway with schema validation, so flows are declared rather than ad hoc.",
+      "Avoid features that email or export Protected data to arbitrary destinations.",
+    ],
+    consequences: [
+      "Uncontrolled egress lets malware or a malicious insider exfiltrate data without detection.",
+      "Data may flow to systems that are not authorized for Protected B, violating the interconnected system's authorization.",
+    ],
+    mitigations: [
+      "Monitor and alert on unusual outbound volumes or destinations.",
+      "Apply data loss prevention on exports and email features.",
+      "Restrict bulk export to a small privileged role with logging.",
+    ],
+    describe: "Information flows in {product} are restricted to those shown in the approved data flow diagram. Network security groups deny traffic by default, outbound connections are restricted to an allow-list, and integrations pass through an API gateway that enforces schemas and authentication.",
+    questions: [
+      "Is there a current data flow diagram showing every flow across zones or system boundaries?",
+      "Is outbound (egress) traffic restricted to approved destinations?",
+      "Are bulk exports and integrations controlled and logged?",
+    ],
+    keywords: ["data flow", "egress", "network segmentation", "firewall rule", "network security group", "api gateway", "allow-list", "allowlist", "dlp", "data loss prevention", "zone"],
+    scope: [
+      { when: { hosting: "endpoint" }, status: "shared", reason: "Endpoint-only software relies largely on the host network's flow controls." },
+    ],
+  },
+  {
+    id: "AC-5", title: "Separation of Duties", sev: "medium",
+    summary: "Separate duties so that no single person can misuse the system without collusion (e.g. developers cannot deploy to production alone, admins cannot approve their own access).",
+    look: [
+      "Ask who can both write code and push it to production without another person's approval.",
+      "Check whether the person who administers user access can also grant themselves new roles.",
+      "Look at a high-value business transaction: can one user both create and approve it?",
+    ],
+    eliminate: [
+      "Make the CI/CD pipeline the only path to production, with required peer review, so separation is enforced by tooling.",
+      "Use the IdP's approval workflow for privileged group membership so admins cannot self-approve.",
+      "Build maker-checker workflows into the product for sensitive transactions.",
+    ],
+    consequences: [
+      "One compromised or malicious account can make and hide unauthorized changes.",
+      "Fraud and data manipulation become hard to detect and impossible to attribute.",
+    ],
+    mitigations: [
+      "Review logs of privileged actions with someone independent of the operator.",
+      "Alert on self-approval and on changes made outside the pipeline.",
+      "For small teams, document the conflict and use after-the-fact peer review.",
+    ],
+    describe: "Duties in {product} are separated: production changes require peer review and pass only through the deployment pipeline, privileged role assignments require approval by a second person, and business roles are designed so that no user can both initiate and approve a sensitive transaction.",
+    questions: [
+      "Are developer, operator and security administrator duties assigned to different people?",
+      "Is production deployment impossible without a second person's approval?",
+      "Can users be prevented from approving their own requests or transactions?",
+    ],
+    keywords: ["separation of duties", "segregation of duties", "four-eyes", "maker-checker", "peer review", "dual control", "approval workflow"],
+  },
+  {
+    id: "AC-6", title: "Least Privilege", sev: "high",
+    summary: "Give users and processes only the access they need for their tasks, and restrict privileged functions to those who require them.",
+    look: [
+      "Count how many people hold global admin or root-equivalent roles. Ask each one when they last needed it.",
+      "Check whether administrators use separate accounts for admin work and for email and browsing.",
+      "Inspect the application's database and cloud credentials: are they owner-level or scoped?",
+    ],
+    eliminate: [
+      "Use just-in-time privilege elevation (e.g. privileged identity management) so standing admin rights do not exist.",
+      "Run application components with narrowly scoped managed identities instead of shared high-privilege credentials.",
+      "Design the product so routine support tasks can be done from a limited support role, not a full admin.",
+    ],
+    consequences: [
+      "Excess privilege multiplies the impact of any compromised account. One phished admin can mean the whole tenant.",
+      "Over-privileged service credentials turn a small application flaw into a full data breach.",
+    ],
+    mitigations: [
+      "Require MFA and a privileged access workstation for admin accounts.",
+      "Review privileged role holders monthly.",
+      "Alert on use of high-privilege roles and on new role grants.",
+    ],
+    describe: "{product} applies least privilege: users receive only the roles needed for their job, administrators use separate privileged accounts that are elevated just in time with MFA, and application components run under scoped identities with only the permissions they require.",
+    questions: [
+      "Are privileged roles limited to a small, documented set of people?",
+      "Do administrators use separate accounts for privileged work?",
+      "Are application and service credentials scoped to the minimum permissions required?",
+      "Is privileged access elevated just in time rather than held permanently?",
+    ],
+    keywords: ["least privilege", "privileged access", "pim", "just-in-time", "just in time", "jit", "privileged identity", "admin account", "minimum permission", "scoped"],
+  },
+  {
+    id: "AC-7", title: "Unsuccessful Logon Attempts", sev: "medium",
+    summary: "Limit consecutive failed logon attempts and lock the account or delay further attempts when the limit is exceeded.",
+    look: [
+      "Try six wrong passwords on a test account and observe what happens.",
+      "Check whether the lockout also applies to API and mobile endpoints, not just the web form.",
+    ],
+    eliminate: [
+      "Federate to the departmental IdP: lockout and smart throttling are then enforced by the IdP and the product has no password prompt at all.",
+      "Use passwordless or phishing-resistant authentication so guessing attacks have nothing to guess.",
+    ],
+    consequences: [
+      "Unlimited attempts enable password spraying and brute-force attacks against known usernames.",
+    ],
+    mitigations: [
+      "Rate limit by source IP and by account at the gateway or WAF.",
+      "Alert on spikes of failed logons.",
+      "Require MFA so a guessed password alone is insufficient.",
+    ],
+    describe: "Authentication for {product} is performed by {idp}, which locks or throttles accounts after repeated failed attempts according to departmental policy. {product} itself does not accept passwords.",
+    questions: [
+      "Are accounts locked or throttled after a defined number of failed attempts?",
+      "Does the limit apply to every authentication path (web, API, mobile)?",
+    ],
+    keywords: ["lockout", "account lock", "failed login", "failed logon", "brute force", "rate limit", "throttl*"],
+    scope: [
+      { when: { identity: "gc-sso" }, status: "inherited", reason: "Enforced by the departmental identity provider when sign-in is fully federated." },
+      { when: { identity: "none" }, status: "na", reason: "No interactive logon." },
+    ],
+  },
+  {
+    id: "AC-8", title: "System Use Notification", sev: "low",
+    summary: "Display an approved notice before granting access, stating that use is monitored and that the system is for authorized use only.",
+    look: [
+      "Open the login page. Is there a banner, and does its wording match the departmental standard notice?",
+    ],
+    eliminate: [
+      "When sign-in is federated, the departmental IdP's sign-in page can display the standard notice for all federated applications.",
+    ],
+    consequences: [
+      "Weakens the department's ability to take disciplinary or legal action for misuse, since users were not informed of monitoring.",
+    ],
+    mitigations: [
+      "Include the notice in the acceptable-use agreement users sign (PL-4).",
+    ],
+    describe: "Before access to {product} is granted, users see the departmental system use notification on the {idp} sign-in page, stating that the system is for authorized use only and that activity is monitored.",
+    questions: [
+      "Is an approved system use notice displayed before login?",
+    ],
+    keywords: ["banner", "system use notification", "logon banner", "login banner", "authorized use only", "terms of use"],
+    scope: [
+      { when: { identity: "gc-sso" }, status: "inherited", reason: "Departmental IdP sign-in page displays the notice." },
+      { when: { identity: "none" }, status: "na", reason: "No interactive logon." },
+    ],
+  },
+  {
+    id: "AC-11", title: "Session Lock", sev: "low",
+    summary: "Lock a session after a period of inactivity and require re-authentication to resume.",
+    look: [
+      "Leave a logged-in session idle and time how long until it locks or expires.",
+    ],
+    eliminate: [
+      "Rely on device-level screen lock enforced by departmental endpoint management for staff, and document the inheritance.",
+      "Use short-lived tokens with idle timeout configured in the IdP.",
+    ],
+    consequences: [
+      "Unattended sessions can be used by anyone with physical access to the device.",
+    ],
+    mitigations: [
+      "Enforce operating system screen lock via device policy.",
+      "Shorten idle timeout for privileged sessions.",
+    ],
+    describe: "{product} sessions expire after 15 minutes of inactivity, requiring re-authentication. Departmental endpoints additionally enforce operating system screen lock.",
+    questions: [
+      "Do sessions lock or expire after a defined period of inactivity?",
+      "Is re-authentication required to resume?",
+    ],
+    keywords: ["session timeout", "idle timeout", "session lock", "inactivity", "screen lock"],
+    scope: [
+      { when: { identity: "none" }, status: "na", reason: "No interactive sessions." },
+    ],
+  },
+  {
+    id: "AC-12", title: "Session Termination", sev: "low",
+    summary: "Automatically end user sessions after defined conditions (e.g. maximum lifetime, logout) and invalidate the session tokens.",
+    look: [
+      "Log out, then replay the old session cookie or token. Does the server still accept it?",
+      "Check the maximum token lifetime and refresh token policy.",
+    ],
+    eliminate: [
+      "Use the IdP's session and token lifetime policies and short-lived access tokens validated on each call.",
+    ],
+    consequences: [
+      "Stolen session tokens remain usable long after the user has gone.",
+    ],
+    mitigations: [
+      "Bind tokens to client characteristics and monitor for token reuse from new locations.",
+    ],
+    describe: "{product} terminates sessions on logout, after an absolute session lifetime, and when the user is disabled in {idp}. Session tokens are invalidated server-side and cannot be replayed.",
+    questions: [
+      "Are sessions invalidated server-side on logout?",
+      "Is there a maximum session lifetime after which re-authentication is required?",
+    ],
+    keywords: ["session termination", "logout", "token lifetime", "token expiry", "refresh token", "session expir*"],
+    scope: [
+      { when: { identity: "none" }, status: "na", reason: "No interactive sessions." },
+    ],
+  },
+  {
+    id: "AC-14", title: "Permitted Actions Without Identification or Authentication", sev: "low",
+    summary: "Identify and document any actions users can perform without signing in, and justify them.",
+    look: [
+      "Browse the product signed out. List every page and API endpoint that responds without authentication.",
+    ],
+    eliminate: [
+      "Require authentication for everything except a static landing page and health check.",
+    ],
+    consequences: [
+      "Undocumented anonymous endpoints are a common source of data leakage and reconnaissance.",
+    ],
+    mitigations: [
+      "Rate limit anonymous endpoints and ensure they return no sensitive data.",
+    ],
+    describe: "The only actions permitted in {product} without authentication are viewing the public landing page and the service health endpoint, neither of which returns protected information. All other functions require authentication.",
+    questions: [
+      "Is there a documented list of functions available without authentication?",
+      "Has it been verified that none of them expose protected information?",
+    ],
+    keywords: ["anonymous access", "unauthenticated", "public endpoint", "without authentication", "guest access"],
+  },
+  {
+    id: "AC-17", title: "Remote Access", sev: "high",
+    summary: "Authorize, control and monitor remote access, especially remote administrative access.",
+    look: [
+      "Ask how an administrator reaches the production environment from home. Follow the path end to end.",
+      "Check whether management interfaces (SSH, RDP, cloud console, database ports) are reachable from the internet.",
+    ],
+    eliminate: [
+      "Remove standing remote admin paths: use a bastion or session manager service with MFA and recording, and no open management ports.",
+      "Manage infrastructure only through infrastructure-as-code pipelines so humans rarely need interactive remote access.",
+      "Use conditional access to allow admin access only from managed devices.",
+    ],
+    consequences: [
+      "Exposed management ports are scanned within minutes and are a top initial access vector.",
+      "Unmonitored remote sessions allow attackers to operate for long periods undetected.",
+    ],
+    mitigations: [
+      "Restrict management access to known IP ranges and require MFA.",
+      "Record and review privileged remote sessions.",
+    ],
+    describe: "Remote administrative access to {product} is only possible through a managed bastion service that requires MFA, restricts access to managed devices and logs every session. No management ports are exposed to the internet. User access is through the web interface over TLS.",
+    questions: [
+      "Are all remote access methods documented and authorized?",
+      "Does remote administrative access require MFA?",
+      "Are management interfaces unreachable directly from the internet?",
+      "Are remote administrative sessions logged or recorded?",
+    ],
+    keywords: ["remote access", "vpn", "bastion", "jump host", "session manager", "ssh", "rdp", "zero trust", "conditional access"],
+  },
+  {
+    id: "AC-18", title: "Wireless Access", sev: "medium",
+    summary: "Establish restrictions and authorization for wireless access to the system.",
+    look: ["Walk the facility with a wireless scanner if the product relies on on-site wireless networks."],
+    eliminate: ["Design the product to be reachable only over wired or authenticated departmental networks, or treat all networks as untrusted and rely on end-to-end TLS and strong authentication."],
+    consequences: ["Rogue or weakly protected wireless networks can expose traffic or provide a foothold inside the boundary."],
+    mitigations: ["Use WPA3-Enterprise with certificate-based authentication and monitor for rogue access points."],
+    describe: "{product} does not include or depend on wireless networks. Users connect over departmental or public networks and all traffic is protected end to end with TLS.",
+    questions: ["Are wireless networks used by the product authorized, authenticated and encrypted?"],
+    keywords: ["wireless", "wi-fi", "wifi", "wpa"],
+    scope: [{ when: { wireless: "no" }, status: "na", reason: "Product does not include or depend on managed wireless networks." }],
+  },
+  {
+    id: "AC-19", title: "Access Control for Mobile Devices", sev: "medium",
+    summary: "Set usage restrictions and controls for mobile devices that access the system.",
+    look: [
+      "Install the mobile app. Check whether data is cached on the device and whether it is encrypted.",
+      "Ask whether unmanaged personal devices can access Protected data.",
+    ],
+    eliminate: [
+      "Allow access only from devices enrolled in departmental mobile device management, enforced by conditional access.",
+      "Use a web app without offline storage so nothing persists on the device.",
+    ],
+    consequences: ["Lost or stolen devices can expose cached Protected B data."],
+    mitigations: ["App-level PIN, encrypted local storage and remote wipe capability."],
+    describe: "Mobile access to {product} is restricted to devices enrolled in departmental mobile device management. The app stores no Protected data locally beyond encrypted, short-lived cache, and access can be revoked remotely.",
+    questions: [
+      "Is mobile access restricted to managed or compliant devices?",
+      "Is any data stored on the device encrypted and removable remotely?",
+    ],
+    keywords: ["mobile device", "mdm", "intune", "mobile app", "byod", "remote wipe"],
+    scope: [{ when: { mobile: "no" }, status: "na", reason: "No mobile app or mobile-device access." }],
+  },
+  {
+    id: "AC-20", title: "Use of External Information Systems", sev: "medium",
+    summary: "Set terms for using external systems (personal devices, third-party services) to access or process the system's information.",
+    look: [
+      "Ask whether users can sign in from personal home computers.",
+      "List third-party services the product sends data to (analytics, email, error tracking).",
+    ],
+    eliminate: [
+      "Use conditional access to block unmanaged devices.",
+      "Remove or self-host third-party scripts and telemetry that would otherwise receive data.",
+    ],
+    consequences: ["Protected data may land on uncontrolled devices or in third-party services without agreements."],
+    mitigations: ["Browser-only access with download blocking for unmanaged devices; contractual terms for third parties."],
+    describe: "Access to {product} from external systems is governed by departmental conditional access policy. Third-party services that process {product} data are documented, contractually bound and approved.",
+    questions: [
+      "Are terms defined for accessing the product from non-departmental devices?",
+      "Are all third-party services that receive product data known and approved?",
+    ],
+    keywords: ["byod", "personal device", "unmanaged device", "third-party service", "telemetry", "analytics"],
+  },
+  {
+    id: "AC-22", title: "Publicly Accessible Content", sev: "medium",
+    summary: "Designate who may post public content, train them and review content before and after publishing so no non-public information is released.",
+    look: ["Ask who can publish content to the public side and how it is reviewed."],
+    eliminate: ["Keep public content in a separate system from Protected information so it is physically impossible to publish it by mistake."],
+    consequences: ["Accidental publication of Protected information is a reportable privacy or security breach."],
+    mitigations: ["Two-person review for public posts and periodic scanning of public content."],
+    describe: "Only designated and trained {org} staff may publish public content in {product}. Content is reviewed before publication and audited quarterly to confirm no non-public information is exposed.",
+    questions: ["Are designated, trained people the only ones who can publish public content, with a review step?"],
+    keywords: ["public content", "publish", "public website"],
+    scope: [{ when: { publicContent: "no" }, status: "na", reason: "Product does not publish information publicly." }],
+  },
+
+  // ---------------------------------------------------------------- AU
+  {
+    id: "AU-2", title: "Auditable Events", sev: "high",
+    summary: "Decide which events the system must log (e.g. logons, privilege use, access to sensitive records, configuration changes) and why.",
+    look: [
+      "Ask for the list of logged event types. Then perform a sensitive action yourself and check whether it appears.",
+      "Check whether read access to Protected records is logged, not just changes.",
+    ],
+    eliminate: [
+      "Use platform-native logging (IdP sign-in logs, cloud control plane logs, managed database audit) so most events are captured without custom code.",
+      "Emit structured application audit events from a single shared library so coverage is consistent.",
+    ],
+    consequences: [
+      "Missing events mean incidents cannot be detected or investigated, and privacy breaches cannot be scoped.",
+      "Without evidence you may have to assume all records were exposed and notify everyone.",
+    ],
+    mitigations: [
+      "Enable maximum platform logging as a stopgap while application events are added.",
+      "Prioritize logging of authentication, privilege use and bulk data access first.",
+    ],
+    describe: "{product} logs authentication events, privileged actions, access to and changes of Protected records, configuration changes and security-relevant errors. The event list is reviewed annually with the departmental security team and aligned to GC event logging guidance.",
+    questions: [
+      "Is there a defined list of events the product logs?",
+      "Are logons, privileged actions and configuration changes logged?",
+      "Is access (including read access) to Protected records logged?",
+    ],
+    keywords: ["audit log", "event logging", "audit trail", "logging", "log events", "activity log"],
+  },
+  {
+    id: "AU-3", title: "Content of Audit Records", sev: "medium",
+    summary: "Audit records must say what happened, when, where, the source, the outcome and who was involved.",
+    look: ["Pull five audit records at random. Can you tell who, what, when, where and outcome from each one without asking anyone?"],
+    eliminate: ["Use a standard structured log schema (e.g. JSON with user ID, action, object, result, source IP, timestamp) enforced by a shared logger."],
+    consequences: ["Logs that say 'error' or 'record updated' without a user or object are useless in an investigation."],
+    mitigations: ["Correlate application logs with IdP and network logs to reconstruct missing context."],
+    describe: "Each {product} audit record includes a UTC timestamp, user identity, source address, event type, affected object and outcome, in a structured format ingested by the central log platform.",
+    questions: ["Do audit records include user identity, timestamp, event type, object, source and outcome?"],
+    keywords: ["structured log", "log format", "user id", "timestamp", "log schema"],
+  },
+  {
+    id: "AU-4", title: "Audit Storage Capacity", sev: "low",
+    summary: "Allocate enough storage for audit records so they are not lost or overwritten.",
+    look: ["Ask what happens to logs when storage fills. Check the retention and capacity settings in the log platform."],
+    eliminate: ["Ship logs to a managed, auto-scaling log service so capacity is no longer a design concern."],
+    consequences: ["Audit records silently overwritten before review destroy evidence."],
+    mitigations: ["Capacity alerts at 75% and 90%."],
+    describe: "{product} forwards audit records in near real time to a managed log service with elastic capacity and capacity alerts.",
+    questions: ["Is audit storage sized or elastic so records are not lost?"],
+    keywords: ["log retention", "log storage", "log analytics", "siem", "log capacity"],
+  },
+  {
+    id: "AU-5", title: "Response to Audit Processing Failures", sev: "low",
+    summary: "Alert responsible staff when logging fails, and take defined action.",
+    look: ["Ask: if the log forwarder stopped tonight, who would know and when?"],
+    eliminate: ["Use a monitoring rule that alerts on absence of logs ('heartbeat') from each source."],
+    consequences: ["Attackers often disable logging first. Without failure alerts, the blind spot goes unnoticed."],
+    mitigations: ["Daily check of log ingestion volumes by operations staff."],
+    describe: "The central log platform alerts the {org} operations team if {product} log ingestion stops or drops below the expected baseline.",
+    questions: ["Are staff alerted when audit logging fails or stops?"],
+    keywords: ["log failure", "heartbeat", "ingestion alert", "log pipeline"],
+  },
+  {
+    id: "AU-6", title: "Audit Review, Analysis and Reporting", sev: "high",
+    summary: "Regularly review and analyze audit records for signs of inappropriate or unusual activity, and report findings.",
+    look: [
+      "Ask for evidence of the last log review: a ticket, report or alert triage note.",
+      "Look at the SIEM rules that cover this product. Are there any?",
+    ],
+    eliminate: [
+      "Forward logs to the departmental SIEM/SOC so detection rules and review are performed centrally rather than by the product team.",
+    ],
+    consequences: [
+      "Logs nobody reads detect nothing. Breaches go unnoticed for months.",
+    ],
+    mitigations: [
+      "Start with a handful of high-value alerts: impossible travel, mass export, admin role grant, logging disabled.",
+      "Weekly manual review of privileged activity until automated detection is in place.",
+    ],
+    describe: "{product} audit logs are forwarded to the departmental SIEM, where automated detection rules analyze them continuously. Alerts are triaged by the security operations team and suspicious activity is reported per the incident response plan.",
+    questions: [
+      "Are audit logs reviewed or analyzed at a defined frequency (or continuously by a SIEM)?",
+      "Are findings reported to the appropriate security personnel?",
+      "Are logs forwarded to a departmental or enterprise SIEM/SOC?",
+    ],
+    keywords: ["siem", "log review", "soc", "security operations", "sentinel", "splunk", "alerting", "detection rule", "log analysis"],
+  },
+  {
+    id: "AU-8", title: "Time Stamps", sev: "low",
+    summary: "Use synchronized system clocks so audit timestamps are accurate and comparable.",
+    look: ["Compare timestamps for the same event in the application log and the IdP log."],
+    eliminate: ["Use cloud platform time sync (which is synchronized to authoritative sources) and log in UTC."],
+    consequences: ["Clock drift makes incident timelines unreliable and evidence contestable."],
+    mitigations: ["Record the offset during investigations."],
+    describe: "{product} components synchronize time with authoritative sources provided by the hosting platform (traceable to sources such as NRC time servers) and record all timestamps in UTC.",
+    questions: ["Are system clocks synchronized to an authoritative time source?"],
+    keywords: ["ntp", "time sync", "utc", "time source", "clock"],
+    scope: [{ when: { hosting: "gc-csp" }, status: "shared", reason: "Cloud platform provides time sync; product must use it and log in a consistent time zone." }],
+  },
+  {
+    id: "AU-9", title: "Protection of Audit Information", sev: "medium",
+    summary: "Protect audit records and tools from unauthorized access, modification and deletion.",
+    look: ["Ask who can delete logs. If the answer includes the application administrators, the logs can be erased by the people they audit."],
+    eliminate: ["Write logs to a separate account/subscription with immutable (write-once) storage that application admins cannot access."],
+    consequences: ["An attacker or insider with admin rights can cover their tracks."],
+    mitigations: ["Hash-chain or sign log batches; alert on log deletion."],
+    describe: "{product} audit records are forwarded to a separate, access-restricted log workspace. Application administrators cannot modify or delete logs; retention is immutable for the defined period.",
+    questions: [
+      "Are audit logs protected from modification and deletion by application administrators?",
+      "Is access to audit logs restricted to authorized roles?",
+    ],
+    keywords: ["immutable", "worm", "tamper", "log integrity", "write once"],
+  },
+  {
+    id: "AU-11", title: "Audit Record Retention", sev: "low",
+    summary: "Keep audit records long enough to support investigations and meet legal and information management requirements.",
+    look: ["Ask for the retention setting and the source of that number (policy, legal requirement)."],
+    eliminate: ["Inherit the departmental log retention standard by forwarding logs to the enterprise log platform."],
+    consequences: ["An incident discovered after logs have expired cannot be investigated."],
+    mitigations: ["Archive logs to low-cost storage rather than deleting them."],
+    describe: "{product} audit records are retained for the period defined by departmental policy (e.g. at least 90 days online and longer in archive) in line with information management requirements.",
+    questions: ["Is there a defined audit retention period that is actually configured?"],
+    keywords: ["retention", "archive", "log retention"],
+  },
+  {
+    id: "AU-12", title: "Audit Generation", sev: "medium",
+    summary: "The system must be able to generate the audit records defined in AU-2 on all relevant components.",
+    look: ["List every component (web, API, database, batch jobs, admin tools). Confirm each one produces logs."],
+    eliminate: ["Enable diagnostic settings on all cloud resources via policy so no component is left unlogged."],
+    consequences: ["Unlogged components become the attacker's preferred path."],
+    mitigations: ["Cloud policy that flags resources without diagnostic logging."],
+    describe: "All {product} components generate audit records for the events defined in AU-2. Cloud policy enforces diagnostic logging on every deployed resource.",
+    questions: ["Do all components (application, database, infrastructure, admin tools) generate audit records?"],
+    keywords: ["diagnostic settings", "audit generation", "cloudtrail", "activity log", "audit logging enabled"],
+  },
+
+  // ---------------------------------------------------------------- IA
+  {
+    id: "IA-2", title: "Identification and Authentication (Organizational Users)", sev: "high",
+    summary: "Uniquely identify and authenticate organizational users, with multi-factor authentication for privileged and remote access.",
+    look: [
+      "Sign in as a regular user and as an admin. Count the authentication factors for each.",
+      "Look for legacy authentication paths (basic auth, API keys tied to users, IMAP-style protocols) that bypass MFA.",
+    ],
+    eliminate: [
+      "Federate to the departmental IdP with MFA and conditional access, so the product never handles credentials (aligns with ITSP.30.031 guidance).",
+      "Disable all local and legacy authentication methods once SSO is in place.",
+    ],
+    consequences: [
+      "Single-factor access to Protected B data is the leading cause of account takeover via phishing and credential stuffing.",
+      "GC Cloud Guardrails require MFA for privileged and cloud console access.",
+    ],
+    mitigations: [
+      "Enforce MFA at minimum for administrators and all remote access.",
+      "Restrict access to known networks or managed devices until MFA is universal.",
+    ],
+    describe: "All organizational users of {product} are uniquely identified and authenticate through {idp} with multi-factor authentication. No shared accounts or legacy authentication methods are permitted.",
+    questions: [
+      "Does every user have a unique identifier (no shared logins)?",
+      "Is MFA required for privileged accounts?",
+      "Is MFA required for all users accessing remotely or over the internet?",
+      "Are legacy or local authentication paths that bypass MFA disabled?",
+    ],
+    keywords: ["mfa", "multi-factor", "multifactor", "2fa", "two-factor", "sso", "single sign-on", "saml", "openid", "oidc", "entra", "azure ad", "okta", "authentication"],
+    scope: [{ when: { identity: "none" }, status: "na", reason: "No interactive organizational users." }],
+  },
+  {
+    id: "IA-3", title: "Device Identification and Authentication", sev: "low",
+    summary: "Identify and authenticate devices or services before establishing connections.",
+    look: ["Check how integrations and backend services authenticate to each other: shared secrets, certificates or managed identities?"],
+    eliminate: ["Use mutual TLS or platform-managed workload identities so device and service authentication is automatic and secretless."],
+    consequences: ["Unauthenticated service connections allow spoofed systems to inject or read data."],
+    mitigations: ["Network restrictions so only known hosts can connect; rotate shared secrets frequently."],
+    describe: "{product} services authenticate to each other using platform-managed identities and TLS certificates. Device compliance is evaluated by departmental conditional access before user sessions are established.",
+    questions: ["Are devices or services authenticated before connections are established?"],
+    keywords: ["mutual tls", "mtls", "managed identity", "device certificate", "workload identity", "device compliance"],
+  },
+  {
+    id: "IA-4", title: "Identifier Management", sev: "low",
+    summary: "Manage identifiers: assign them uniquely, prevent reuse, and disable them after inactivity.",
+    look: ["Check whether a username freed by a departing employee can be given to a new employee (and inherit their history)."],
+    eliminate: ["Use immutable IdP object IDs as the product's user key rather than email or username."],
+    consequences: ["Identifier reuse can grant a new user access to a previous user's data or corrupt audit attribution."],
+    mitigations: ["Never reuse identifiers within the audit retention period."],
+    describe: "{product} keys user records to immutable identifiers issued by {idp}. Identifiers are never reused, and identifiers inactive beyond the defined period are disabled.",
+    questions: ["Are identifiers unique, never reused, and disabled after inactivity?"],
+    keywords: ["unique identifier", "user id", "object id", "identifier reuse"],
+    scope: [{ when: { identity: "gc-sso" }, status: "shared", reason: "IdP manages identifiers; product must key users to the IdP's immutable identifier." }],
+  },
+  {
+    id: "IA-5", title: "Authenticator Management", sev: "high",
+    summary: "Manage passwords, keys, tokens and certificates: strength, initial distribution, protection, rotation and revocation.",
+    look: [
+      "Search the code repository and CI variables for secrets, API keys and passwords.",
+      "Check the password policy (length, breach list checks) for any local accounts.",
+      "Ask how API keys are rotated and how a compromised key would be revoked.",
+    ],
+    eliminate: [
+      "No local passwords: federate to the IdP for users and use managed identities for services.",
+      "Store remaining secrets only in a managed secret vault with automatic rotation.",
+      "Prefer short-lived tokens issued on demand over long-lived API keys.",
+    ],
+    consequences: [
+      "Leaked or weak credentials are the most common initial access vector.",
+      "Secrets committed to source control are routinely harvested by automated scanners within minutes of exposure.",
+    ],
+    mitigations: [
+      "Secret scanning on repositories and pipelines.",
+      "Check passwords against breached-password lists and require long passphrases.",
+      "Rotate all long-lived secrets on a schedule and after staff departures.",
+    ],
+    describe: "User authenticators for {product} are managed by {idp}. Service secrets and keys are stored in a managed vault, never in source code, and rotated automatically. Repositories are scanned for leaked secrets.",
+    questions: [
+      "Are passwords (if any) held to a strong policy and checked against breached-password lists?",
+      "Are secrets, keys and certificates stored in a secure vault rather than in code or configuration files?",
+      "Are authenticators rotated periodically and revoked promptly when compromised?",
+      "Is source code scanned for committed secrets?",
+    ],
+    keywords: ["password policy", "key vault", "secret", "secrets manager", "rotation", "api key", "passphrase", "credential", "hsm", "certificate"],
+  },
+  {
+    id: "IA-6", title: "Authenticator Feedback", sev: "low",
+    summary: "Obscure authentication feedback (e.g. mask passwords) so authenticators are not exposed.",
+    look: ["Watch a login: are passwords masked? Do error messages reveal whether the username exists?"],
+    eliminate: ["Federated sign-in hands this to the IdP."],
+    consequences: ["Shoulder surfing or username enumeration helps attackers."],
+    mitigations: ["Generic error messages for failed logins."],
+    describe: "Authentication to {product} is performed by {idp}, which masks authenticators during entry and returns generic failure messages.",
+    questions: ["Are authenticators masked and are login error messages generic?"],
+    keywords: ["masked", "username enumeration", "error message"],
+    scope: [
+      { when: { identity: "gc-sso" }, status: "inherited", reason: "Departmental IdP handles credential entry." },
+      { when: { identity: "none" }, status: "na", reason: "No interactive logon." },
+    ],
+  },
+  {
+    id: "IA-7", title: "Cryptographic Module Authentication", sev: "medium",
+    summary: "Authentication to cryptographic modules must meet applicable requirements (use validated modules).",
+    look: ["Ask which cryptographic libraries and key stores are used and whether they are CMVP (FIPS 140) validated."],
+    eliminate: ["Use cloud key management services and HSMs that are CMVP validated, so module validation is inherited."],
+    consequences: ["Non-validated cryptography may not be accepted for Protected B by the authorizing official."],
+    mitigations: ["Document the algorithms used and their alignment with ITSP.40.111."],
+    describe: "{product} uses cryptographic modules validated under the Cryptographic Module Validation Program, including the cloud provider's key management service, with access to keys authenticated through platform identity controls.",
+    questions: ["Are cryptographic modules CMVP (FIPS 140-2/140-3) validated?"],
+    keywords: ["fips 140", "cmvp", "validated module", "hsm", "key management service"],
+  },
+  {
+    id: "IA-8", title: "Identification and Authentication (Non-Organizational Users)", sev: "high",
+    summary: "Uniquely identify and authenticate users who are not departmental staff (public, partners) at an assurance level appropriate to the risk.",
+    look: [
+      "Register as a member of the public. What proves who you are? Could you register as someone else?",
+      "Check the identity assurance level against the information the user can see.",
+    ],
+    eliminate: [
+      "Use GC-approved external credential services (e.g. GCKey or a trusted digital identity / sign-in partner) instead of building account management.",
+      "Limit what external users can see to their own information so lower assurance has less impact.",
+    ],
+    consequences: ["Weak identity proofing enables impersonation and fraudulent access to someone else's Protected B information."],
+    mitigations: ["Step-up verification before viewing sensitive data; fraud monitoring."],
+    describe: "External users of {product} authenticate through an approved external credential service with MFA. Identity proofing is performed at the assurance level determined in the departmental assessment, and users can access only their own information.",
+    questions: [
+      "Are external users uniquely identified and authenticated?",
+      "Is identity assurance appropriate to the sensitivity of information they can access?",
+      "Is MFA available or required for external users?",
+    ],
+    keywords: ["gckey", "sign-in partner", "identity proofing", "external user", "citizen", "customer identity", "b2c", "identity assurance"],
+    scope: [{ when: { userBase: "internal" }, status: "na", reason: "Only organizational users access the product." }],
+  },
+
+  // ---------------------------------------------------------------- SC
+  {
+    id: "SC-2", title: "Application Partitioning", sev: "medium",
+    summary: "Separate user functionality from system management functionality.",
+    look: ["Is the admin interface on the same URL, host and network path as the user interface?"],
+    eliminate: ["Host administration on a separate interface reachable only from management networks or via the bastion."],
+    consequences: ["A flaw in the user interface can expose administrative functions."],
+    mitigations: ["Restrict admin paths by role and network at the gateway."],
+    describe: "Administrative functions of {product} are separated from user functions and are reachable only through a dedicated management interface restricted to administrators.",
+    questions: ["Is administrative functionality separated from user functionality?"],
+    keywords: ["admin portal", "management plane", "separate admin", "partition"],
+  },
+  {
+    id: "SC-4", title: "Information in Shared Resources", sev: "medium",
+    summary: "Prevent unintended information transfer through shared resources (memory, storage, caches, multi-tenant components).",
+    look: ["For multi-tenant SaaS, ask how tenant data is isolated and whether isolation has been penetration tested."],
+    eliminate: ["Single-tenant deployment for Protected B, or tenant-specific encryption keys so cross-tenant access yields only ciphertext."],
+    consequences: ["A tenant isolation failure exposes your data to other customers."],
+    mitigations: ["Independent penetration testing of tenant isolation; customer-managed keys."],
+    describe: "{product} isolates each customer's data logically by tenant identifier enforced at the data access layer, with tenant-specific encryption keys. Tenant isolation is verified through independent testing.",
+    questions: ["Is data isolated between tenants or users sharing resources, and has isolation been tested?"],
+    keywords: ["multi-tenant", "tenant isolation", "single-tenant", "shared resources"],
+    scope: [{ when: { hosting: "gc-csp" }, status: "shared", reason: "Hardware-level isolation is inherited from the CSP; application-level tenant isolation remains." }],
+  },
+  {
+    id: "SC-5", title: "Denial of Service Protection", sev: "medium",
+    summary: "Protect against or limit the effects of denial of service attacks.",
+    look: ["Ask what protects the public endpoint and what happens to the service under a traffic spike."],
+    eliminate: ["Front the service with a cloud DDoS protection and CDN/WAF service so volumetric protection is inherited."],
+    consequences: ["Outage of a public-facing service; for medium availability, injury to service delivery."],
+    mitigations: ["Rate limiting, auto-scaling and a tested communication plan."],
+    describe: "{product} is protected by the cloud provider's DDoS protection and a web application firewall with rate limiting. Auto-scaling absorbs legitimate load spikes.",
+    questions: ["Is the service protected against denial of service (DDoS protection, rate limiting)?"],
+    keywords: ["ddos", "denial of service", "cdn", "waf", "rate limit", "web application firewall"],
+    scope: [
+      { when: { internetFacing: "no" }, status: "shared", reason: "Not internet-facing; protection relies mostly on the departmental network." },
+      { when: { hosting: "gc-csp" }, status: "shared", reason: "Network-level DDoS protection inherited from CSP; application-level protection remains." },
+    ],
+  },
+  {
+    id: "SC-7", title: "Boundary Protection", sev: "high",
+    summary: "Monitor and control communications at the external boundary and key internal boundaries, using managed interfaces and network zones.",
+    look: [
+      "Ask for the network diagram and compare it with the actual cloud network configuration.",
+      "Scan the public IP range: what ports respond?",
+      "Check whether databases and storage accounts have public endpoints enabled.",
+    ],
+    eliminate: [
+      "Use private endpoints for all data stores so they have no public interface at all.",
+      "Expose only a single managed entry point (application gateway / WAF) per the ITSG-22 / ITSG-38 zoning model.",
+      "Use platform policy to block creation of public IPs and public storage.",
+    ],
+    consequences: [
+      "Publicly exposed storage or databases are a leading cause of large data leaks.",
+      "Flat networks let an attacker move freely from one compromised component to all others.",
+    ],
+    mitigations: ["Network monitoring and alerting on new public endpoints; periodic external scans."],
+    describe: "{product} is deployed in network zones aligned with ITSG-22 / ITSG-38. The only internet-facing interface is a web application firewall; data stores use private endpoints with no public access. Traffic between zones is restricted by deny-by-default rules and logged.",
+    questions: [
+      "Is the system boundary defined and protected by managed interfaces (firewall/WAF/gateway)?",
+      "Are databases and storage free of public network access?",
+      "Are internal zones separated with deny-by-default rules?",
+    ],
+    keywords: ["firewall", "waf", "private endpoint", "private link", "vnet", "vpc", "network zone", "dmz", "boundary", "segmentation", "itsg-22", "itsg-38"],
+  },
+  {
+    id: "SC-8", title: "Transmission Confidentiality and Integrity", sev: "high",
+    summary: "Protect information in transit from disclosure and modification.",
+    look: [
+      "Run a TLS scan against every endpoint. Check protocol versions and cipher suites.",
+      "Ask whether internal traffic (app to database, service to service) is also encrypted.",
+    ],
+    eliminate: ["Terminate TLS only at managed services that enforce TLS 1.2+ by policy, and enforce encryption on internal connections with platform settings."],
+    consequences: ["Interception of Protected B data in transit; credential theft on untrusted networks."],
+    mitigations: ["HSTS, disabling legacy protocols, and network-level encryption for internal links."],
+    describe: "All communication with and within {product} is encrypted using TLS 1.2 or higher with configurations aligned to ITSP.40.062. HSTS is enforced, legacy protocols are disabled, and internal connections to data stores require encryption.",
+    questions: [
+      "Is all external traffic encrypted with TLS 1.2 or higher?",
+      "Is internal traffic between components also encrypted?",
+      "Are TLS configurations aligned with CCCS guidance (ITSP.40.062)?",
+    ],
+    keywords: ["tls", "https", "ssl", "encryption in transit", "in transit", "hsts", "itsp.40.062"],
+  },
+  {
+    id: "SC-10", title: "Network Disconnect", sev: "low",
+    summary: "Terminate network connections at the end of a session or after a period of inactivity.",
+    look: ["Check idle timeouts on load balancers, VPN and bastion sessions."],
+    eliminate: ["Managed services with default idle timeouts."],
+    consequences: ["Idle connections can be hijacked."],
+    mitigations: ["Short idle timeouts on administrative sessions."],
+    describe: "Network connections to {product} are terminated after a defined idle period at the load balancer and bastion.",
+    questions: ["Are network connections terminated after inactivity?"],
+    keywords: ["idle timeout", "connection timeout", "disconnect"],
+  },
+  {
+    id: "SC-12", title: "Cryptographic Key Establishment and Management", sev: "high",
+    summary: "Generate, distribute, store, rotate and destroy cryptographic keys securely.",
+    look: ["Ask where encryption keys live, who can access them and how they are rotated. Look for keys in config files."],
+    eliminate: ["Use a managed key management service or HSM with automatic rotation; consider customer-managed keys so the department can revoke access."],
+    consequences: ["Compromised keys make encryption meaningless; lost keys make data unrecoverable."],
+    mitigations: ["Restrict key access, audit key use, and back up keys securely."],
+    describe: "Encryption keys for {product} are generated and stored in a managed key management service backed by validated HSMs. Key access is restricted to specific identities, all key operations are logged, and keys are rotated on a defined schedule.",
+    questions: [
+      "Are keys stored in a managed key service or HSM (not in code or config)?",
+      "Are keys rotated on a defined schedule and access to them logged?",
+      "Can the department control or revoke keys (customer-managed keys) if required?",
+    ],
+    keywords: ["key management", "kms", "key vault", "hsm", "byok", "customer-managed key", "cmk", "key rotation"],
+  },
+  {
+    id: "SC-13", title: "Cryptographic Protection (Use of Cryptography)", sev: "high",
+    summary: "Use cryptography approved for the information's sensitivity (CSE/CCCS-approved algorithms, validated modules).",
+    look: ["Ask for the list of algorithms and key sizes used for encryption, hashing and signatures."],
+    eliminate: ["Use platform-managed encryption that is already aligned with ITSP.40.111 and CMVP validated, rather than custom cryptography."],
+    consequences: ["Weak or home-grown cryptography may be broken; assessors will not accept it for Protected B."],
+    mitigations: ["Inventory cryptographic usage and replace deprecated algorithms (e.g. SHA-1, 3DES, RSA < 2048)."],
+    describe: "{product} uses only cryptographic algorithms approved in ITSP.40.111, implemented by CMVP-validated modules, for protecting information at rest and in transit.",
+    questions: [
+      "Are only CCCS-approved algorithms (ITSP.40.111) used?",
+      "Is custom or home-grown cryptography avoided?",
+    ],
+    keywords: ["aes", "aes-256", "rsa", "sha-256", "itsp.40.111", "fips", "cryptograph*"],
+  },
+  {
+    id: "SC-17", title: "Public Key Infrastructure Certificates", sev: "low",
+    summary: "Issue or obtain public key certificates under an appropriate certificate policy.",
+    look: ["Check certificate issuers and expiry dates on all endpoints. Ask how renewals are tracked."],
+    eliminate: ["Use managed certificates with automatic renewal."],
+    consequences: ["Expired certificates cause outages; untrusted issuers enable interception."],
+    mitigations: ["Certificate expiry monitoring."],
+    describe: "{product} uses certificates from a trusted public CA (or the GC PKI where required), managed with automatic renewal and expiry monitoring.",
+    questions: ["Are certificates from trusted issuers and renewed before expiry automatically or with monitoring?"],
+    keywords: ["certificate", "pki", "let's encrypt", "certificate renewal"],
+  },
+  {
+    id: "SC-23", title: "Session Authenticity", sev: "medium",
+    summary: "Protect the authenticity of communication sessions (prevent hijacking, fixation, CSRF).",
+    look: ["Inspect cookies: Secure, HttpOnly, SameSite flags? Is there CSRF protection on state-changing requests?"],
+    eliminate: ["Use a framework that provides secure session handling and CSRF protection by default."],
+    consequences: ["Session hijacking or cross-site request forgery lets attackers act as users."],
+    mitigations: ["Rotate session ID on login, short token lifetimes."],
+    describe: "{product} protects session authenticity using secure, HttpOnly, SameSite cookies, session regeneration on login, and anti-CSRF protections on all state-changing requests.",
+    questions: ["Are sessions protected against hijacking and forgery (secure cookies, CSRF protection)?"],
+    keywords: ["csrf", "samesite", "httponly", "session fixation", "secure cookie"],
+  },
+  {
+    id: "SC-28", title: "Protection of Information at Rest", sev: "high",
+    summary: "Protect the confidentiality and integrity of stored information, including databases, files and backups.",
+    look: [
+      "Check encryption settings on every data store: databases, object storage, disks, backups, search indexes, caches and logs.",
+      "Look for copies of production data in test environments or on laptops.",
+    ],
+    eliminate: [
+      "Use platform encryption at rest enforced by policy (a GC Cloud Guardrail), with customer-managed keys where risk warrants.",
+      "Do not copy production data to non-production; use synthetic or masked data.",
+      "Avoid storing data you do not need (data minimization): data never collected needs no protection.",
+    ],
+    consequences: ["Exposure of Protected B data from lost media, misconfigured storage or stolen backups; privacy breach notification obligations."],
+    mitigations: ["Field-level encryption of the most sensitive attributes; strict access to backups."],
+    describe: "All {product} data at rest, including databases, file storage, backups and logs, is encrypted using AES-256 through platform encryption with keys managed in the key management service. Production data is not copied to non-production environments.",
+    questions: [
+      "Is all data at rest (databases, files, backups, logs) encrypted?",
+      "Is production data kept out of non-production environments (or masked)?",
+      "Is encryption at rest enforced by policy so new storage cannot be created unencrypted?",
+    ],
+    keywords: ["encryption at rest", "at rest", "encrypted storage", "transparent data encryption", "tde", "disk encryption", "aes-256", "data masking"],
+  },
+];
