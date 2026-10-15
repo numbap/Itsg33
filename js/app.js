@@ -9,6 +9,7 @@ import {
 import { CLASSES } from "./data/families.js";
 import { PROFILE_FIELDS, PROFILE_DEFAULTS, PROFILE_LABELS, profileWarnings } from "./data/scoping.js";
 import { buildReportModel, esc, reportToCSV, reportToHTML, reportToMarkdown } from "./report.js";
+import { SAMPLE_TEXT, sampleState } from "./sample.js";
 
 const STORAGE_KEY = "itsg33-navigator-state";
 const app = document.getElementById("app");
@@ -52,13 +53,29 @@ function setAnswer(id, patch) {
 
 // ------------------------------------------------------------------ helpers
 
-function toast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(t._h);
-  t._h = setTimeout(() => t.classList.remove("show"), 2400);
+// Screen reader announcement through the polite live region (WCAG 4.1.3).
+let liveTimer;
+function announce(msg) {
+  const live = document.getElementById("live");
+  live.textContent = "";
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => { live.textContent = msg; }, 60);
 }
+
+// Visible confirmation that stays until dismissed (no time limit, WCAG 2.2.1);
+// the same text is announced through the live region.
+function toast(msg) {
+  announce(msg);
+  document.getElementById("toast-msg").textContent = msg;
+  document.getElementById("toast").hidden = false;
+}
+
+function hideToast() {
+  document.getElementById("toast").hidden = true;
+}
+
+document.getElementById("toast-close").addEventListener("click", hideToast);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideToast(); });
 
 function download(name, content, type) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -118,7 +135,7 @@ function viewHome() {
     <p class="muted">Everything is saved in this browser only. Export the assessment to share it or move it to another computer.</p>
     <div class="actions">
       <button class="btn" data-action="export-json">Export assessment (JSON)</button>
-      <label class="btn">Import assessment<input type="file" accept="application/json,.json" data-action="import-json" hidden></label>
+      <label class="btn file-btn">Import assessment<input type="file" class="sr-only" accept="application/json,.json" data-action="import-json"></label>
       <button class="btn" data-action="load-sample">Load sample product</button>
       <button class="btn danger" data-action="reset">Start over</button>
     </div>
@@ -173,7 +190,7 @@ function viewProfile() {
   const byId = Object.fromEntries(PROFILE_FIELDS.map((f) => [f.id, f]));
   return `
   <div class="page-head"><h1>1. Scope the product</h1>
-    <p class="lead">Answer what you know. Each answer changes which ITSG-33 controls apply. The right-hand panel shows the effect as you go.</p></div>
+    <p class="lead">Answer what you know. Each answer changes which ITSG-33 controls apply. The “What this scope means” summary shows the effect as you go.</p></div>
   <div class="split">
     <form class="profile-form" onsubmit="return false">
       ${groups.map(([title, ids]) => `<fieldset class="card"><legend>${title}</legend>${ids.map((id) => fieldHTML(byId[id])).join("")}</fieldset>`).join("")}
@@ -197,7 +214,7 @@ function viewReview() {
         ${hints.length ? `<h3 class="h5">Suggested scope changes</h3><ul class="hints">${hints.map((h) => `
           <li><div><strong>${esc(fieldLabel[h.field])}</strong> → ${esc(PROFILE_LABELS[h.field]?.[h.value] ?? (h.value === "yes" ? "Yes" : h.value))}
           <blockquote>${esc(h.evidence)}</blockquote></div>
-          <button class="btn small" data-action="apply-hint" data-field="${h.field}" data-value="${h.value}">Apply</button></li>`).join("")}</ul>` : ""}
+          <button class="btn small" data-action="apply-hint" data-field="${h.field}" data-value="${h.value}" aria-label="Apply: ${esc(fieldLabel[h.field])}">Apply</button></li>`).join("")}</ul>` : ""}
         <div class="actions"><button class="btn" data-action="copy-evidence">Copy evidence into questionnaire notes</button></div>
       </section>
       ${FAMILIES.map((f) => {
@@ -227,7 +244,7 @@ function viewReview() {
     <textarea id="review-text" rows="12" placeholder="e.g. The service is hosted in Microsoft Azure Canada Central and Canada East. Users sign in with SAML single sign-on and MFA is enforced...">${esc(state.review.text)}</textarea>
     <div class="actions">
       <button class="btn primary" data-action="analyze">Analyze</button>
-      <label class="btn">Load text file<input type="file" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,text/*" data-action="load-text" hidden></label>
+      <label class="btn file-btn">Load text file<input type="file" class="sr-only" accept=".txt,.md,.markdown,.csv,.json,.html,.htm,text/*" data-action="load-text"></label>
       <button class="btn" data-action="sample-text">Use sample text</button>
       ${res ? `<button class="btn" data-action="clear-review">Clear results</button>` : ""}
     </div>
@@ -260,9 +277,10 @@ function gembaTabs(c) {
     ["describe", "Describe it", `<p class="muted small">A starting point for the implementation statement:</p><blockquote>${esc(desc)}</blockquote>
       <p class="small"><strong>Writing tips:</strong> name the mechanism (not the intent), say who does it and how often, name the tool or service, and point to evidence an assessor can check. Avoid “will” and “should”: describe what is true today, and put the rest in the POA&amp;M.</p>`],
   ];
+  const id = (part, k) => `${c.id}-${part}-${k}`;
   return `<div class="gemba" data-gemba="${c.id}">
-    <div class="tabs" role="tablist">${tabs.map(([k, label], i) => `<button type="button" role="tab" class="tab ${i === 0 ? "on" : ""}" data-tab="${k}" aria-selected="${i === 0}">${label}</button>`).join("")}</div>
-    ${tabs.map(([k, , body], i) => `<div class="tab-panel" role="tabpanel" data-panel="${k}" ${i === 0 ? "" : "hidden"}>${body}</div>`).join("")}
+    <div class="tabs" role="tablist" aria-label="Gemba walk for ${c.id}">${tabs.map(([k, label], i) => `<button type="button" role="tab" class="tab ${i === 0 ? "on" : ""}" id="${id("tab", k)}" aria-controls="${id("panel", k)}" data-tab="${k}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${label}</button>`).join("")}</div>
+    ${tabs.map(([k, , body], i) => `<div class="tab-panel" role="tabpanel" id="${id("panel", k)}" aria-labelledby="${id("tab", k)}" tabindex="0" data-panel="${k}" ${i === 0 ? "" : "hidden"}>${body}</div>`).join("")}
   </div>`;
 }
 
@@ -285,7 +303,7 @@ function controlBody(c) {
     ${rev ? `<div class="callout info small"><strong>From document review:</strong>${[...rev.evidence, ...rev.caveats].slice(0, 3).map((s) => `<blockquote>${esc(s)}</blockquote>`).join("")}</div>` : ""}
     ${out ? `<p class="callout muted">No questionnaire needed: this control is ${APPLICABILITY[r.applicability.status].label.toLowerCase()}. Keep the provider's evidence on file, or change applicability above if this is wrong.</p>` : `
     <div class="questions">
-      <h4 class="h5">Questions</h4>
+      <h2 class="h5">Questions<span class="sr-only"> for ${c.id}</span></h2>
       ${c.questions.map((q, i) => `<fieldset class="q"><legend>${esc(q)}</legend><div class="seg">
         ${ANSWER_OPTIONS.map((o) => `<label class="seg-opt seg-${o.value}"><input type="radio" name="${c.id}.q${i}" value="${o.value}" data-q="${i}" data-id="${c.id}" ${a.q[i] === o.value ? "checked" : ""}><span>${o.label}</span></label>`).join("")}
       </div></fieldset>`).join("")}
@@ -344,25 +362,41 @@ function viewAssess(famId, ctlId) {
   </div>`;
 }
 
-function viewLibrary(query = "", cls = "") {
+function libraryItems(query, cls) {
   const q = query.toLowerCase();
-  const items = CONTROLS.filter((c) => (!cls || FAMILY_MAP[c.family].cls === cls) &&
+  return CONTROLS.filter((c) => (!cls || FAMILY_MAP[c.family].cls === cls) &&
     (!q || [c.id, c.title, c.summary, ...c.eliminate, ...c.keywords].join(" ").toLowerCase().includes(q)));
+}
+
+function libraryResults(items) {
+  return items.map((c) => {
+    const r = evaluateControl(c, state);
+    return `<a class="card lib-item" href="#/control/${c.id}">
+      <div class="lib-top"><span class="cid">${c.id}</span><span class="sev sev-${c.sev}">${c.sev}</span>${pills(r)}</div>
+      <h2 class="h5">${esc(c.title)}</h2><p class="small muted">${esc(c.summary)}</p>
+      <p class="small"><strong>Eliminate:</strong> ${esc(c.eliminate[0])}</p></a>`;
+  }).join("") || `<p>No controls match.</p>`;
+}
+
+function updateLibrary() {
+  const items = libraryItems(libQuery, libCls);
+  document.getElementById("lib-results").innerHTML = libraryResults(items);
+  document.getElementById("lib-count").textContent = `${items.length} controls`;
+  clearTimeout(updateLibrary.t);
+  updateLibrary.t = setTimeout(() => announce(`${items.length} controls found`), 400);
+}
+
+function viewLibrary(query = "", cls = "") {
+  const items = libraryItems(query, cls);
   return `
   <div class="page-head"><h1>Gemba library</h1>
     <p class="lead">Every control with its Gemba walk: go and see, eliminate by design, consequences, mitigations and how to describe it.</p></div>
   <div class="filters card">
-    <input type="search" id="lib-q" placeholder="Search controls, e.g. MFA, backup, data residency" value="${esc(query)}" aria-label="Search controls">
+    <label class="sr-only" for="lib-q">Search controls</label><input type="search" id="lib-q" placeholder="Search controls, e.g. MFA, backup, data residency" value="${esc(query)}">
     <select id="lib-cls" aria-label="Filter by class"><option value="">All classes</option>${Object.entries(CLASSES).map(([k, v]) => `<option value="${k}" ${cls === k ? "selected" : ""}>${v}</option>`).join("")}</select>
-    <span class="muted small">${items.length} controls</span>
+    <span class="muted small" id="lib-count">${items.length} controls</span>
   </div>
-  <div class="lib-grid">${items.map((c) => {
-    const r = evaluateControl(c, state);
-    return `<a class="card lib-item" href="#/control/${c.id}">
-      <div class="lib-top"><span class="cid">${c.id}</span><span class="sev sev-${c.sev}">${c.sev}</span>${pills(r)}</div>
-      <h3 class="h5">${esc(c.title)}</h3><p class="small muted">${esc(c.summary)}</p>
-      <p class="small"><strong>Eliminate:</strong> ${esc(c.eliminate[0])}</p></a>`;
-  }).join("")}</div>`;
+  <div class="lib-grid" id="lib-results">${libraryResults(items)}</div>`;
 }
 
 function viewControl(id) {
@@ -411,7 +445,7 @@ function viewReport() {
       <button class="btn" data-action="export-csv">Download CSV (control list)</button>
       <button class="btn" data-action="export-json">Export assessment (JSON)</button>
     </div></div>
-  <div class="card report-wrap">${reportToHTML(m)}</div>`;
+  <div class="card">${reportToHTML(m)}</div>`;
 }
 
 // ------------------------------------------------------------------ routing
@@ -419,10 +453,16 @@ function viewReport() {
 let libQuery = "";
 let libCls = "";
 
-function route() {
+// focus: "heading" moves focus to the new page's h1 (in-app navigation),
+// "none" leaves it (first load); rerender() restores focus to the same control.
+function route({ focus = "heading" } = {}) {
   const [, view = "", a, b] = location.hash.replace(/^#/, "").split("/");
   const nav = { "": "home", profile: "profile", review: "review", assess: "assess", report: "report", library: "library", control: "library" }[view] ?? "home";
-  document.querySelectorAll("[data-nav]").forEach((el) => el.classList.toggle("active", el.dataset.nav === nav));
+  document.querySelectorAll("[data-nav]").forEach((el) => {
+    el.classList.toggle("active", el.dataset.nav === nav);
+    if (el.dataset.nav === nav) el.setAttribute("aria-current", "page");
+    else el.removeAttribute("aria-current");
+  });
   let html;
   switch (view) {
     case "profile": html = viewProfile(); break;
@@ -435,8 +475,26 @@ function route() {
   }
   app.innerHTML = html;
   document.title = `${nav === "home" ? "" : `${nav[0].toUpperCase()}${nav.slice(1)} · `}ITSG-33 Compliance Navigator`;
-  if (view === "assess" && b) document.getElementById(`c-${b}`)?.scrollIntoView({ block: "start" });
-  else window.scrollTo(0, 0);
+  const h1 = app.querySelector("h1");
+  if (h1) h1.tabIndex = -1;
+  if (view === "assess" && b) {
+    const card = document.getElementById(`c-${b}`);
+    card?.scrollIntoView({ block: "start" });
+    if (focus === "heading") card?.querySelector("summary").focus({ preventScroll: true });
+  } else {
+    window.scrollTo(0, 0);
+    if (focus === "heading") h1?.focus({ preventScroll: true });
+  }
+}
+
+// Re-render the current view after an action, keeping keyboard focus on the
+// equivalent control (or the page heading if it no longer exists).
+function rerender() {
+  const a = document.activeElement;
+  const key = a?.id ? `#${CSS.escape(a.id)}` : a?.dataset?.action ? `[data-action="${a.dataset.action}"]` : null;
+  route({ focus: "none" });
+  const target = (key && app.querySelector(key)) || app.querySelector("h1");
+  target?.focus({ preventScroll: !key });
 }
 
 // Refresh the parts of the questionnaire that depend on an answer without
@@ -477,11 +535,7 @@ app.addEventListener("input", (e) => {
     save();
   } else if (t.id === "lib-q") {
     libQuery = t.value;
-    const pos = t.selectionStart;
-    route();
-    const q = document.getElementById("lib-q");
-    q.focus();
-    q.setSelectionRange(pos, pos);
+    updateLibrary();
   }
 });
 
@@ -491,18 +545,27 @@ app.addEventListener("change", async (e) => {
     state.profile[t.dataset.profile] = t.value;
     save();
     document.getElementById("scope-summary").innerHTML = scopeSummary();
+    const n = [...document.querySelectorAll("#scope-summary .sc")].map((e) => e.textContent.trim().replace(/^(\d+)/, "$1 ")).join(", ");
+    announce(`Scope updated: ${n}`);
   } else if (t.dataset.q !== undefined && t.dataset.id) {
     const a = getAnswer(state, t.dataset.id);
     const q = [...a.q];
     q[Number(t.dataset.q)] = t.value;
     setAnswer(t.dataset.id, { q });
     refreshControl(t.dataset.id);
+    const r = evaluateControl(CONTROL_MAP[t.dataset.id], state);
+    announce(`${t.dataset.id}: ${STATUS[r.status].label}`);
   } else if (t.dataset.field && (t.tagName === "SELECT" || t.type === "date")) {
     setAnswer(t.dataset.id, { [t.dataset.field]: t.value });
     refreshControl(t.dataset.id, t.dataset.field === "applicability");
+    if (t.tagName === "SELECT") {
+      const r = evaluateControl(CONTROL_MAP[t.dataset.id], state);
+      announce(`${t.dataset.id}: ${APPLICABILITY[r.applicability.status].label}, ${STATUS[r.status].label}`);
+      if (t.dataset.field === "applicability") document.querySelector(`select[data-field="applicability"][data-id="${t.dataset.id}"]`)?.focus();
+    }
   } else if (t.id === "lib-cls") {
     libCls = t.value;
-    route();
+    updateLibrary();
   } else if (t.dataset.action === "import-json" && t.files[0]) {
     try {
       const data = JSON.parse(await t.files[0].text());
@@ -510,7 +573,7 @@ app.addEventListener("change", async (e) => {
       state = migrate(data);
       save();
       toast("Assessment imported");
-      route();
+      rerender();
     } catch (err) {
       toast(`Import failed: ${err.message}`);
     }
@@ -519,17 +582,40 @@ app.addEventListener("change", async (e) => {
     if (/\.html?$/i.test(t.files[0].name)) text = new DOMParser().parseFromString(text, "text/html").body.textContent ?? "";
     state.review.text = text;
     save();
-    route();
+    rerender();
     toast(`Loaded ${t.files[0].name}`);
   }
+});
+
+function selectTab(tab) {
+  const g = tab.closest(".gemba");
+  g.querySelectorAll("[data-tab]").forEach((b) => {
+    const on = b === tab;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", String(on));
+    b.tabIndex = on ? 0 : -1;
+  });
+  g.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== tab.dataset.tab; });
+}
+
+// ARIA tabs keyboard pattern: arrows move between tabs, Home/End jump.
+app.addEventListener("keydown", (e) => {
+  const tab = e.target.closest?.("[role=tab]");
+  if (!tab) return;
+  const tabs = [...tab.parentElement.querySelectorAll("[role=tab]")];
+  const i = tabs.indexOf(tab);
+  const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+  if (next === undefined) return;
+  e.preventDefault();
+  const t = tabs[(next + tabs.length) % tabs.length];
+  selectTab(t);
+  t.focus();
 });
 
 app.addEventListener("click", (e) => {
   const tab = e.target.closest("[data-tab]");
   if (tab) {
-    const g = tab.closest(".gemba");
-    g.querySelectorAll("[data-tab]").forEach((b) => { b.classList.toggle("on", b === tab); b.setAttribute("aria-selected", b === tab); });
-    g.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== tab.dataset.tab; });
+    selectTab(tab);
     return;
   }
   const el = e.target.closest("[data-action]");
@@ -544,7 +630,7 @@ app.addEventListener("click", (e) => {
       if (!confirm("Delete this assessment from this browser? Export it first if you want to keep it.")) return;
       state = newState();
       save();
-      route();
+      rerender();
       toast("Started a new assessment");
     },
     "load-sample": () => {
@@ -552,31 +638,31 @@ app.addEventListener("click", (e) => {
       state = sampleState();
       save();
       toast("Sample product loaded");
-      location.hash = "#/review";
-      route();
+      if (location.hash === "#/review") rerender();
+      else location.hash = "#/review";
     },
     "sample-text": () => {
       state.review.text = SAMPLE_TEXT;
       save();
-      route();
+      rerender();
     },
     analyze: () => {
       const text = document.getElementById("review-text").value;
       if (!text.trim()) { toast("Paste some documentation text first"); return; }
       state.review = { text, results: analyzeText(text), analyzedAt: new Date().toISOString() };
       save();
-      route();
-      toast(`Found evidence for ${state.review.results.covered} controls`);
+      rerender();
+      toast(`Analysis complete: found evidence for ${state.review.results.covered} controls`);
     },
     "clear-review": () => {
       state.review.results = null;
       save();
-      route();
+      rerender();
     },
     "apply-hint": () => {
       state.profile[el.dataset.field] = el.dataset.value;
       save();
-      route();
+      rerender();
       toast("Scope updated");
     },
     "copy-evidence": () => {
@@ -610,6 +696,8 @@ const themeBtn = document.getElementById("theme-toggle");
 function applyTheme(t) {
   if (t) document.documentElement.dataset.theme = t;
   else delete document.documentElement.dataset.theme;
+  const dark = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  themeBtn.setAttribute("aria-pressed", String(dark));
 }
 try { applyTheme(localStorage.getItem("itsg33-theme")); } catch { /* ignore */ }
 themeBtn.addEventListener("click", () => {
@@ -621,39 +709,7 @@ themeBtn.addEventListener("click", () => {
   try { localStorage.setItem("itsg33-theme", t); } catch { /* ignore */ }
 });
 
-// ------------------------------------------------------------------ sample
-
-const SAMPLE_TEXT = `CaseTrack Online is a software as a service case management product hosted in Microsoft Azure Canada Central with backups replicated to Canada East.
-Users sign in with SAML single sign-on through the customer's Entra ID tenant, and MFA is enforced by the customer's conditional access policies.
-Role-based access control is enforced server-side on every API request.
-All data is encrypted at rest with AES-256 using Azure Key Vault customer-managed keys, and all traffic uses TLS 1.2 or higher.
-Audit logs capture sign-ins, record views and exports and are forwarded to the customer's SIEM.
-Log retention is 90 days by default.
-Databases are reachable only through private endpoints; the only public interface is an Azure Application Gateway with WAF.
-Vulnerability scanning with Trivy and Snyk runs on every build, and a third-party penetration test is performed annually.
-Dependabot pull requests keep dependencies patched; critical vulnerabilities are patched within 7 days.
-Uploaded attachments are scanned for malware before they become available.
-Remote support access by our engineers requires customer approval through a just-in-time support access workflow.
-Incident response follows our documented plan, and customers are notified of security incidents within 24 hours.
-Disaster recovery testing is planned for next year; point-in-time restore backups are kept for 35 days.
-Our staff hold Reliability Status; subcontractor screening is available upon request.
-Infrastructure is defined in Terraform and all changes go through pull request review and the CI/CD pipeline.
-A SOC 2 Type II report is available under NDA.
-A mobile app for iOS and Android is not yet available.`;
-
-function sampleState() {
-  const s = newState();
-  s.profile = {
-    ...s.profile,
-    productName: "CaseTrack Online",
-    org: "CaseTrack Software Inc.",
-    description: "Cloud case management for departmental program officers handling Protected B client files.",
-  };
-  s.review.text = SAMPLE_TEXT;
-  return s;
-}
-
 // ------------------------------------------------------------------ start
 
-window.addEventListener("hashchange", route);
-route();
+window.addEventListener("hashchange", () => { hideToast(); route(); });
+route({ focus: "none" });

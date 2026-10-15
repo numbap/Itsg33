@@ -115,23 +115,23 @@ export function reportToHTML(m) {
 
     <h2>2. System profile</h2>
     ${m.profile.description ? `<p>${esc(m.profile.description)}</p>` : ""}
-    <table class="kv">${m.profileRows.map((r) => `<tr><th>${esc(r.label)}</th><td>${esc(r.value)}</td></tr>`).join("")}</table>
+    <div class="table-wrap" role="region" tabindex="0" aria-label="System profile table"><table class="kv"><caption class="sr-only">System profile</caption>${m.profileRows.map((r) => `<tr><th scope="row">${esc(r.label)}</th><td>${esc(r.value)}</td></tr>`).join("")}</table></div>
 
     <h2>3. Compliance by family</h2>
-    <table class="grid">
-      <thead><tr><th>Family</th><th>In scope</th><th>Met</th><th>Partial</th><th>Not met</th><th>Unknown</th><th>Score</th></tr></thead>
+    <div class="table-wrap" role="region" tabindex="0" aria-label="Compliance by control family table"><table class="grid"><caption class="sr-only">Compliance by control family</caption>
+      <thead><tr><th scope="col">Family</th><th scope="col">In scope</th><th scope="col">Met</th><th scope="col">Partial</th><th scope="col">Not met</th><th scope="col">Unknown</th><th scope="col">Score</th></tr></thead>
       <tbody>${famRows}</tbody>
-    </table>
+    </table></div>
 
     <h2>4. Design opportunities (eliminate requirements by design)</h2>
     <p>These design choices remove or shrink groups of requirements rather than satisfying them one at a time.</p>
     <ul>${levers}</ul>
 
     <h2>5. Gap register and plan of action (POA&amp;M)</h2>
-    <table class="grid gaps">
-      <thead><tr><th>Control</th><th>Risk</th><th>Status</th><th>Consequences if left unmet</th><th>Mitigations</th><th>Planned remediation</th></tr></thead>
+    <div class="table-wrap" role="region" tabindex="0" aria-label="Gap register and plan of action table"><table class="grid gaps"><caption class="sr-only">Gap register and plan of action</caption>
+      <thead><tr><th scope="col">Control</th><th scope="col">Risk</th><th scope="col">Status</th><th scope="col">Consequences if left unmet</th><th scope="col">Mitigations</th><th scope="col">Planned remediation</th></tr></thead>
       <tbody>${gaps}</tbody>
-    </table>
+    </table></div>
 
     <h2>6. Open questions and unassessed controls</h2>
     ${open}

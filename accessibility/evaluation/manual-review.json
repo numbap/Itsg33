@@ -1,0 +1,24 @@
+{
+  "reviewedAt": "2026-10-15",
+  "reviewer": "Claude (AI assistant, Anthropic). Self-assessment; no accessibility certification; not independent",
+  "notes": "Code review of templates, styles and event handling; visual inspection in light, dark and forced-colours modes at 320, 1000 and 1280 px; accessibility tree review; all WCAG 2.2 A/AA criteria in accessibility/evaluation/criteria.mjs",
+  "fingerprint": {
+    "files": {
+      "index.html": "40a03c8dc99f2894",
+      "css/styles.css": "32e5793bbeb4b211",
+      "js/app.js": "820b12644a893749",
+      "js/report.js": "188bccc0b2041acc",
+      "scripts/build-vpat.mjs": "69324f2b8e75621f",
+      "accessibility/assets/docs.css": "5c8b73bd2f873c73"
+    },
+    "combined": "0cbabeba9d721dbc"
+  },
+  "history": [
+    {
+      "reviewedAt": "2026-10-15",
+      "reviewer": "Claude (AI assistant, Anthropic). Self-assessment; no accessibility certification; not independent",
+      "notes": "Code review of templates, styles and event handling; visual inspection in light, dark and forced-colours modes at 320, 1000 and 1280 px; accessibility tree review; all WCAG 2.2 A/AA criteria in accessibility/evaluation/criteria.mjs",
+      "fingerprint": "0cbabeba9d721dbc"
+    }
+  ]
+}
