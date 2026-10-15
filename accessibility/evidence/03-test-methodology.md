@@ -58,7 +58,9 @@ npx playwright install chromium   # unless a Chromium is already available
 npm run a11y                      # build docs, run the suite, rebuild the VPAT in strict mode
 ```
 
-The results are written to `accessibility/results/automated-results.json`. Given the same code and tool versions, runs are deterministic: the fixture data and viewports are fixed and no timestamps are recorded.
+The results are written to `accessibility/results/automated-results.json`. Given the same code, tool versions and environment, runs are deterministic: the fixture data and viewports are fixed and no timestamps are recorded.
+
+**Reference environment.** The GitHub-hosted Ubuntu runner used by the CI workflow is the reference environment, and its results are the ones committed. Font availability differs between machines and can change layout slightly, which in turn changes which axe-core rules apply (for example, whether a region is wide enough to scroll). A local run can therefore list a slightly different set of passing rules. Failures are not environment-dependent in this way: any failure in any environment fails the build.
 
 ## 6. Limitations
 
