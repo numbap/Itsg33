@@ -5,7 +5,7 @@
 The ITSG-33 Compliance Navigator is a client-side web application. Security practitioners, system owners and vendors use it to scope a software product against ITSG-33 security controls, review product documentation, answer a questionnaire and generate a compliance report.
 
 - **Users:** Government of Canada security and IT staff, vendors and consultants. Users may rely on keyboards, screen readers, magnification, high contrast or dark modes, or voice control.
-- **Technology:** HTML, CSS and JavaScript ES modules with no third-party runtime libraries. The application runs entirely in the browser and keeps its data in the browser's local storage. There is no server-side processing, authentication or third-party content.
+- **Technology:** HTML, CSS and JavaScript ES modules with no third-party runtime libraries. The application runs entirely in the browser and keeps its data in the browser's local storage, encrypted by default. There is no server-side processing or third-party content. A passphrase unlocks encrypted assessments.
 - **Accessibility-supported technologies relied upon:** HTML, CSS, JavaScript and WAI-ARIA 1.2.
 
 ## 2. In scope
@@ -21,7 +21,9 @@ The whole web interface of the version under evaluation, in every view and in th
 | Gemba page | Single control detail |
 | Gemba library | Full list (search and filter interaction are covered by scripted checks) |
 | 4. Report | Full generated report, including tables |
+| Data protection | First-run storage setup (with and without a validation error), lock screen, Data and security page (unencrypted and encrypted modes), start page with the Protected B marking banner |
 | Accessibility documentation | Statement, VPAT, test report and evidence pages |
+| Policies | Privacy policy, Protected B handling |
 
 Each state is evaluated in:
 
@@ -30,7 +32,7 @@ Each state is evaluated in:
 - 640 CSS px wide (200% zoom)
 - WCAG text-spacing overrides at 1280 px and 320 px.
 
-A realistic, deterministic sample assessment is loaded so that every view renders with content: answered, partial, unknown and gap states, notes, document review results and a remediation plan (`fixtureState()` in `tests/a11y/run.mjs`).
+Browser storage is seeded before each load: most states use an Unclassified assessment stored unencrypted, and the lock and unlocked Protected B states use an encrypted assessment that the harness unlocks with a fixture passphrase. A realistic, deterministic sample assessment is loaded so that every view renders with content: answered, partial, unknown and gap states, notes, document review results and a remediation plan (`fixtureState()` in `tests/a11y/run.mjs`).
 
 ## 3. Out of scope
 

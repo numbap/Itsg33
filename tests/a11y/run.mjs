@@ -14,6 +14,8 @@ import { chromium } from "playwright";
 import { startServer } from "../../server.mjs";
 import { sampleState } from "../../js/sample.js";
 import { analyzeText } from "../../js/engine.js";
+import { KEYS } from "../../js/storage.js";
+import { createKey, seal } from "../../js/vault.js";
 import {
   BROWSER_HELPERS, keyboardTraversal, lookalikeControls, noHorizontalScroll, nonTextContrast,
   routeFocus, statusMessages, tabsPattern, targetSize, textSpacing,
@@ -42,13 +44,39 @@ function fixtureState() {
   return s;
 }
 
+// Browser storage seeded before each page load:
+//   plain  Unclassified assessment stored unencrypted (most states; no unlock needed)
+//   vault  Protected B assessment encrypted with FIXTURE_PASS (lock screen, unlocked states)
+//   fresh  nothing stored (first-run setup screen)
+const FIXTURE_PASS = "fixture passphrase for accessibility tests";
+const STORAGE = {
+  plain: {
+    [KEYS.settings]: JSON.stringify({ mode: "plain", marking: "unclassified", lockMinutes: 15 }),
+    [KEYS.plain]: JSON.stringify(fixtureState()),
+  },
+  vault: {
+    [KEYS.settings]: JSON.stringify({ mode: "encrypted", marking: "pb", lockMinutes: 15 }),
+    [KEYS.vault]: JSON.stringify(await seal(await createKey(FIXTURE_PASS), fixtureState(), "pb")),
+  },
+  fresh: {},
+};
+const unlock = async (page) => {
+  await page.fill("#unlock-pass", FIXTURE_PASS);
+  await page.click("#unlock-form button[type=submit]");
+  await page.waitForFunction(() => !document.querySelector("#unlock-form"), null, { timeout: 15000 });
+};
+
 // ------------------------------------------------------------------ states
 
 async function docStates() {
   const dir = join(ROOT, "accessibility");
   let files = [];
   try { files = (await readdir(dir)).filter((f) => f.endsWith(".html")).sort(); } catch { /* not built yet */ }
-  return files.map((f) => ({ id: `docs/${f.replace(/\.html$/, "")}`, name: `Accessibility documentation: ${f}`, url: `/accessibility/${f}` }));
+  const policies = (await readdir(join(ROOT, "policies"))).filter((f) => f.endsWith(".html")).sort();
+  return [
+    ...files.map((f) => ({ id: `docs/${f.replace(/\.html$/, "")}`, name: `Accessibility documentation: ${f}`, url: `/accessibility/${f}` })),
+    ...policies.map((f) => ({ id: `policies/${f.replace(/\.html$/, "")}`, name: `Policy page: ${f}`, url: `/policies/${f}` })),
+  ];
 }
 
 const APP_STATES = [
@@ -62,6 +90,13 @@ const APP_STATES = [
   { id: "control", name: "Gemba page for a control (SC-28)", url: "/#/control/SC-28" },
   { id: "library", name: "Gemba library", url: "/#/library" },
   { id: "report", name: "4. Compliance report", url: "/#/report" },
+  { id: "security", name: "Data and security, unencrypted Unclassified storage", url: "/#/security" },
+  { id: "setup", name: "First-run storage setup", url: "/", storage: "fresh" },
+  { id: "setup-error", name: "First-run storage setup, with a validation error", url: "/", storage: "fresh",
+    setup: (page) => page.click("#setup-form button[type=submit]") },
+  { id: "locked", name: "Lock screen (encrypted Protected B assessment)", url: "/", storage: "vault" },
+  { id: "pb-home", name: "Start page, unlocked Protected B assessment (marking banner, lock button)", url: "/", storage: "vault", setup: unlock },
+  { id: "security-encrypted", name: "Data and security, encrypted Protected B storage", url: "/#/security", storage: "vault", setup: unlock },
 ];
 
 // ------------------------------------------------------------------ helpers
@@ -75,13 +110,20 @@ const AXE_SOURCE = await readFile(require.resolve("axe-core/axe.min.js"), "utf8"
 const AXE_VERSION = JSON.parse(await readFile(require.resolve("axe-core/package.json"), "utf8")).version;
 const PW_VERSION = JSON.parse(await readFile(require.resolve("playwright/package.json"), "utf8")).version;
 
-async function openPage(browser, { theme = "light", width = 1280, height = 900 } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, colorScheme: theme, reducedMotion: "reduce" });
-  const state = JSON.stringify(fixtureState());
-  await context.addInitScript(([s, t]) => {
-    try { localStorage.setItem("itsg33-navigator-state", s); localStorage.removeItem("itsg33-theme"); } catch { /* ignore */ }
-    window.__theme = t;
-  }, [state, theme]);
+// bypassCSP lets the harness inject axe-core and text-spacing styles; the CSP
+// itself is verified separately by tests/security/run.mjs.
+async function openPage(browser, { theme = "light", width = 1280, height = 900, storage = "plain" } = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, colorScheme: theme, reducedMotion: "reduce", bypassCSP: true });
+  await context.addInitScript((entries) => {
+    // Seed once per test page; later navigations keep what the app wrote.
+    // (Storage is not accessible on about:blank, hence the try.)
+    try {
+      if (sessionStorage.getItem("__seeded")) return;
+      localStorage.clear();
+      for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
+      sessionStorage.setItem("__seeded", "1");
+    } catch { /* ignore */ }
+  }, STORAGE[storage]);
   await context.addInitScript(BROWSER_HELPERS);
   const page = await context.newPage();
   const errors = [];
@@ -90,6 +132,9 @@ async function openPage(browser, { theme = "light", width = 1280, height = 900 }
 }
 
 async function load(page, url, setup) {
+  // A real load every time: navigating to the same URL with a hash would otherwise
+  // be a same-document navigation that keeps the previous in-memory state.
+  await page.goto("about:blank");
   await page.goto(`${BASE}${url}`);
   await page.waitForLoadState("networkidle");
   if (setup) await setup(page);
@@ -122,7 +167,7 @@ const record = (id, title, sc, state, variant, result, advisory = false) =>
 for (const st of states) {
   process.stdout.write(`• ${st.id}`);
   for (const theme of ["light", "dark"]) {
-    const { page, context, errors } = await openPage(browser, { theme });
+    const { page, context, errors } = await openPage(browser, { theme, storage: st.storage });
     await load(page, st.url, st.setup);
     const axe = await runAxe(page);
     for (const x of [...axe.violations, ...axe.incomplete, ...axe.passes]) axeRules[x.id] ??= { help: x.help, sc: scFromTags(x.tags) };
@@ -153,7 +198,7 @@ for (const st of states) {
   }
 
   for (const [w, sc, title] of [[320, ["1.4.10"], "No horizontal scrolling at 320 CSS px (400% zoom)"], [640, ["1.4.4"], "No loss of content at 640 CSS px (200% zoom)"]]) {
-    const { page, context } = await openPage(browser, { width: w, height: 800 });
+    const { page, context } = await openPage(browser, { width: w, height: 800, storage: st.storage });
     await load(page, st.url, st.setup);
     record(`reflow-${w}`, title, sc, st.id, `${w}px`, await noHorizontalScroll(page));
     if (w === 320) {
@@ -170,7 +215,7 @@ for (const st of states) {
     await context.close();
   }
   for (const w of [1280, 320]) {
-    const { page, context } = await openPage(browser, { width: w, height: 800 });
+    const { page, context } = await openPage(browser, { width: w, height: 800, storage: st.storage });
     await load(page, st.url, st.setup);
     record("text-spacing", "No clipped content with WCAG text-spacing overrides", ["1.4.12"], st.id, `${w}px`, await textSpacing(page));
     await context.close();
@@ -199,7 +244,7 @@ const results = {
   schema: 1,
   tools: { "axe-core": AXE_VERSION, playwright: PW_VERSION, browser: `Chromium (Playwright ${PW_VERSION})` },
   axeTags: AXE_TAGS,
-  states: states.map(({ id, name, url, setup }) => ({ id, name, url, ...(setup ? { setup: setup.toString().replace(/\s+/g, " ") } : {}) })),
+  states: states.map(({ id, name, url, setup, storage }) => ({ id, name, url, storage: storage ?? (url.startsWith("/#") || url === "/" ? "plain" : undefined), ...(setup ? { setup: setup === unlock ? "unlock with the fixture passphrase" : setup.toString().replace(/\s+/g, " ") } : {}) })),
   axeRules: Object.fromEntries(Object.entries(axeRules).sort(([a], [b]) => a.localeCompare(b))),
   variants: ["light theme 1280px", "dark theme 1280px", "320px", "640px", "text-spacing overrides"],
   summary: {

@@ -1,6 +1,6 @@
 {
   "name": "itsg33-compliance-navigator",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Review a software product against ITSG-33 (PBMM) controls, walk the Gemba for each requirement, and generate a compliance report.",
   "type": "module",
   "private": true,
@@ -10,7 +10,8 @@
     "a11y:test": "node tests/a11y/run.mjs",
     "vpat": "node scripts/build-vpat.mjs",
     "a11y": "node scripts/build-vpat.mjs && node tests/a11y/run.mjs && node scripts/build-vpat.mjs --strict",
-    "a11y:attest": "node scripts/attest-manual-review.mjs"
+    "a11y:attest": "node scripts/attest-manual-review.mjs",
+    "test:security": "node tests/security/run.mjs"
   },
   "license": "MIT",
   "devDependencies": {

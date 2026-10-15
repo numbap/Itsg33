@@ -35,7 +35,7 @@
           - /url: remediation-log.html
 - main:
   - heading "Automated test report" [level=1]
-  - paragraph: "Passed: 51 axe-core runs (0 WCAG violations, 0 best-practice issues), 275 of 275 scripted checks passed, 0 JavaScript errors."
+  - paragraph: "Passed: 75 axe-core runs (0 WCAG violations, 0 best-practice issues), 403 of 403 scripted checks passed, 0 JavaScript errors."
   - heading "Tools" [level=2]
   - list:
     - listitem: "axe-core: 4.14.0"
@@ -116,6 +116,48 @@
           - cell "4. Compliance report"
           - cell "/#/report":
             - code: /#/report
+        - row "security Data and security, unencrypted Unclassified storage /#/security":
+          - rowheader "security":
+            - code: security
+          - cell "Data and security, unencrypted Unclassified storage"
+          - cell "/#/security":
+            - code: /#/security
+        - row "setup First-run storage setup /":
+          - rowheader "setup":
+            - code: setup
+          - cell "First-run storage setup"
+          - cell /:
+            - code: /
+        - 'row "setup-error First-run storage setup, with a validation error Setup: (page) => page.click(\"#setup-form button[type=submit]\") /"':
+          - rowheader "setup-error":
+            - code: setup-error
+          - 'cell "First-run storage setup, with a validation error Setup: (page) => page.click(\"#setup-form button[type=submit]\")"':
+            - text: "First-run storage setup, with a validation error Setup:"
+            - code: (page) => page.click("#setup-form button[type=submit]")
+          - cell /:
+            - code: /
+        - row "locked Lock screen (encrypted Protected B assessment) /":
+          - rowheader "locked":
+            - code: locked
+          - cell "Lock screen (encrypted Protected B assessment)"
+          - cell /:
+            - code: /
+        - 'row "pb-home Start page, unlocked Protected B assessment (marking banner, lock button) Setup: unlock with the fixture passphrase /"':
+          - rowheader "pb-home":
+            - code: pb-home
+          - 'cell "Start page, unlocked Protected B assessment (marking banner, lock button) Setup: unlock with the fixture passphrase"':
+            - text: "Start page, unlocked Protected B assessment (marking banner, lock button) Setup:"
+            - code: unlock with the fixture passphrase
+          - cell /:
+            - code: /
+        - 'row "security-encrypted Data and security, encrypted Protected B storage Setup: unlock with the fixture passphrase /#/security"':
+          - rowheader "security-encrypted":
+            - code: security-encrypted
+          - 'cell "Data and security, encrypted Protected B storage Setup: unlock with the fixture passphrase"':
+            - text: "Data and security, encrypted Protected B storage Setup:"
+            - code: unlock with the fixture passphrase
+          - cell "/#/security":
+            - code: /#/security
         - 'row "docs/expertise Accessibility documentation: expertise.html /accessibility/expertise.html"':
           - rowheader "docs/expertise":
             - code: docs/expertise
@@ -164,6 +206,18 @@
           - 'cell "Accessibility documentation: vpat.html"'
           - cell "/accessibility/vpat.html":
             - code: /accessibility/vpat.html
+        - 'row "policies/privacy Policy page: privacy.html /policies/privacy.html"':
+          - rowheader "policies/privacy":
+            - code: policies/privacy
+          - 'cell "Policy page: privacy.html"'
+          - cell "/policies/privacy.html":
+            - code: /policies/privacy.html
+        - 'row "policies/protected-b Policy page: protected-b.html /policies/protected-b.html"':
+          - rowheader "policies/protected-b":
+            - code: policies/protected-b
+          - 'cell "Policy page: protected-b.html"'
+          - cell "/policies/protected-b.html":
+            - code: /policies/protected-b.html
   - paragraph: "Each state was tested in: light theme 1280px; dark theme 1280px; 320px; 640px; text-spacing overrides."
   - heading "Scripted checks" [level=2]
   - region "Scripted check results":
@@ -176,75 +230,75 @@
           - columnheader "Runs"
           - columnheader "Result"
       - rowgroup:
-        - row "keyboard-reach Every focusable control can be reached with Tab 2.1.1 34 All passed":
+        - row "keyboard-reach Every focusable control can be reached with Tab 2.1.1 50 All passed":
           - rowheader "keyboard-reach Every focusable control can be reached with Tab":
             - code: keyboard-reach
             - text: Every focusable control can be reached with Tab
           - cell "2.1.1"
-          - cell "34"
+          - cell "50"
           - cell "All passed"
-        - row "no-keyboard-trap Focus can move through and out of the page 2.1.2 34 All passed":
+        - row "no-keyboard-trap Focus can move through and out of the page 2.1.2 50 All passed":
           - rowheader "no-keyboard-trap Focus can move through and out of the page":
             - code: no-keyboard-trap
             - text: Focus can move through and out of the page
           - cell "2.1.2"
-          - cell "34"
+          - cell "50"
           - cell "All passed"
-        - row "focus-visible Visible focus indicator with at least 3:1 contrast at every stop 2.4.7, 1.4.11 34 All passed":
+        - row "focus-visible Visible focus indicator with at least 3:1 contrast at every stop 2.4.7, 1.4.11 50 All passed":
           - rowheader "focus-visible Visible focus indicator with at least 3:1 contrast at every stop":
             - code: focus-visible
             - text: Visible focus indicator with at least 3:1 contrast at every stop
           - cell "2.4.7, 1.4.11"
-          - cell "34"
+          - cell "50"
           - cell "All passed"
-        - row "focus-not-obscured Focused element is not hidden behind sticky content 2.4.11 34 All passed":
+        - row "focus-not-obscured Focused element is not hidden behind sticky content 2.4.11 50 All passed":
           - rowheader "focus-not-obscured Focused element is not hidden behind sticky content":
             - code: focus-not-obscured
             - text: Focused element is not hidden behind sticky content
           - cell "2.4.11"
-          - cell "34"
+          - cell "50"
           - cell "All passed"
-        - row "non-text-contrast Form field and choice boundaries have at least 3:1 contrast 1.4.11 34 All passed":
+        - row "non-text-contrast Form field and choice boundaries have at least 3:1 contrast 1.4.11 50 All passed":
           - rowheader "non-text-contrast Form field and choice boundaries have at least 3:1 contrast":
             - code: non-text-contrast
             - text: Form field and choice boundaries have at least 3:1 contrast
           - cell "1.4.11"
-          - cell "34"
+          - cell "50"
           - cell "All passed"
-        - row "lookalike-controls Controls that look interactive are keyboard operable 2.1.1, 4.1.2 17 All passed":
+        - row "lookalike-controls Controls that look interactive are keyboard operable 2.1.1, 4.1.2 25 All passed":
           - rowheader "lookalike-controls Controls that look interactive are keyboard operable":
             - code: lookalike-controls
             - text: Controls that look interactive are keyboard operable
           - cell "2.1.1, 4.1.2"
-          - cell "17"
+          - cell "25"
           - cell "All passed"
-        - row "target-size Pointer targets are at least 24 by 24 CSS px 2.5.8 17 All passed":
+        - row "target-size Pointer targets are at least 24 by 24 CSS px 2.5.8 25 All passed":
           - rowheader "target-size Pointer targets are at least 24 by 24 CSS px":
             - code: target-size
             - text: Pointer targets are at least 24 by 24 CSS px
           - cell "2.5.8"
-          - cell "17"
+          - cell "25"
           - cell "All passed"
-        - row "reflow-320 No horizontal scrolling at 320 CSS px (400% zoom) 1.4.10 17 All passed":
+        - row "reflow-320 No horizontal scrolling at 320 CSS px (400% zoom) 1.4.10 25 All passed":
           - rowheader "reflow-320 No horizontal scrolling at 320 CSS px (400% zoom)":
             - code: reflow-320
             - text: No horizontal scrolling at 320 CSS px (400% zoom)
           - cell "1.4.10"
-          - cell "17"
+          - cell "25"
           - cell "All passed"
-        - row "reflow-640 No loss of content at 640 CSS px (200% zoom) 1.4.4 17 All passed":
+        - row "reflow-640 No loss of content at 640 CSS px (200% zoom) 1.4.4 25 All passed":
           - rowheader "reflow-640 No loss of content at 640 CSS px (200% zoom)":
             - code: reflow-640
             - text: No loss of content at 640 CSS px (200% zoom)
           - cell "1.4.4"
-          - cell "17"
+          - cell "25"
           - cell "All passed"
-        - row "text-spacing No clipped content with WCAG text-spacing overrides 1.4.12 34 All passed":
+        - row "text-spacing No clipped content with WCAG text-spacing overrides 1.4.12 50 All passed":
           - rowheader "text-spacing No clipped content with WCAG text-spacing overrides":
             - code: text-spacing
             - text: No clipped content with WCAG text-spacing overrides
           - cell "1.4.12"
-          - cell "34"
+          - cell "50"
           - cell "All passed"
         - row "route-focus Navigation moves focus to the new page heading and updates title 2.4.3, 2.4.2, 4.1.2 1 All passed":
           - rowheader "route-focus Navigation moves focus to the new page heading and updates title":
@@ -274,10 +328,10 @@
   - list:
     - listitem:
       - code: color-contrast
-      - text: "(Elements must meet minimum color contrast ratio thresholds): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px, docs/methodology/light 320px"
+      - text: "(Elements must meet minimum color contrast ratio thresholds): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px, security/light, security/dark, security/light 320px, setup/light, setup/dark, setup/light 320px, setup-error/light, setup-error/dark, setup-error/light 320px, locked/light, locked/dark, locked/light 320px, pb-home/light, pb-home/dark, pb-home/light 320px, security-encrypted/light, security-encrypted/dark, security-encrypted/light 320px, docs/methodology/light 320px"
     - listitem:
       - code: label-content-name-mismatch
-      - text: "(Elements must have their visible text as part of their accessible name): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px"
+      - text: "(Elements must have their visible text as part of their accessible name): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px, security/light, security/dark, security/light 320px, setup/light, setup/dark, setup/light 320px, setup-error/light, setup-error/dark, setup-error/light 320px, locked/light, locked/dark, locked/light 320px, pb-home/light, pb-home/dark, pb-home/light 320px, security-encrypted/light, security-encrypted/dark, security-encrypted/light 320px"
   - heading "axe-core rules applied, by success criterion" [level=2]
   - region "axe-core rules by WCAG success criterion":
     - table "axe-core rules by WCAG success criterion":
@@ -303,6 +357,10 @@
             - code: listitem
             - code: td-headers-attr
             - code: th-has-data-cells
+        - row "1.3.5 autocomplete-valid":
+          - rowheader "1.3.5"
+          - cell "autocomplete-valid":
+            - code: autocomplete-valid
         - row "1.4.1 link-in-text-block":
           - rowheader "1.4.1"
           - cell "link-in-text-block":
@@ -406,6 +464,30 @@
     - listitem:
       - link "4. Compliance report":
         - /url: results/aria/report.yml
+    - listitem:
+      - link "Data and security, unencrypted Unclassified storage":
+        - /url: results/aria/security.yml
+    - listitem:
+      - link "First-run storage setup":
+        - /url: results/aria/setup.yml
+    - listitem:
+      - link "First-run storage setup, with a validation error":
+        - /url: results/aria/setup-error.yml
+    - listitem:
+      - link "Lock screen (encrypted Protected B assessment)":
+        - /url: results/aria/locked.yml
+    - listitem:
+      - link "Start page, unlocked Protected B assessment (marking banner, lock button)":
+        - /url: results/aria/pb-home.yml
+    - listitem:
+      - link "Data and security, encrypted Protected B storage":
+        - /url: results/aria/security-encrypted.yml
+    - listitem:
+      - 'link "Policy page: privacy.html"':
+        - /url: results/aria/policies/privacy.yml
+    - listitem:
+      - 'link "Policy page: protected-b.html"':
+        - /url: results/aria/policies/protected-b.yml
   - heading "Baseline" [level=2]
   - paragraph:
     - text: The audit before remediation is kept as
@@ -417,6 +499,10 @@
     - text: .
 - contentinfo:
   - paragraph:
+    - link "Privacy policy":
+      - /url: ../policies/privacy.html
+    - link "Protected B handling":
+      - /url: ../policies/protected-b.html
     - link "Accessibility statement, VPAT and evidence":
       - /url: index.html
     - link "Report an accessibility problem":
@@ -426,6 +512,6 @@
   - paragraph:
     - text: Generated by
     - code: scripts/build-vpat.mjs
-    - text: from
+    - text: . Compiled from
     - code: accessibility/evaluation/criteria.mjs
-    - text: and the automated test results. Recompiled on every commit by the accessibility workflow.
+    - text: and the automated test results; recompiled on every commit by the accessibility workflow.

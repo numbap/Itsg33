@@ -27,7 +27,7 @@ async function compile(results) {
   const dir = await mkdtemp(join(tmpdir(), "vpat-"));
   const file = join(dir, "results.json");
   await writeFile(file, JSON.stringify(results));
-  const env = { ...process.env, VPAT_OUT: dir, A11Y_RESULTS: file };
+  const env = { ...process.env, VPAT_OUT: dir, POLICY_OUT: dir, A11Y_RESULTS: file };
   let code = 0;
   try { await run("node", [join(ROOT, "scripts/build-vpat.mjs"), "--strict"], { env }); } catch (e) { code = e.code; }
   return { code, md: await readFile(join(dir, "VPAT.md"), "utf8"), html: await readFile(join(dir, "vpat.html"), "utf8") };
@@ -66,6 +66,6 @@ test("automated failures downgrade the mapped criteria and fail strict builds", 
 
 test("missing results fail a strict build", async () => {
   const dir = await mkdtemp(join(tmpdir(), "vpat-"));
-  const env = { ...process.env, VPAT_OUT: dir, A11Y_RESULTS: join(dir, "none.json") };
+  const env = { ...process.env, VPAT_OUT: dir, POLICY_OUT: dir, A11Y_RESULTS: join(dir, "none.json") };
   await assert.rejects(run("node", [join(ROOT, "scripts/build-vpat.mjs"), "--strict"], { env }));
 });

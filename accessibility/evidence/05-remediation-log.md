@@ -51,3 +51,17 @@ Two baseline failures were caused by the harness rather than the product. The co
 - **On deep-linked pages, keyboard traversal started mid-page.** The browser's sequential-focus starting point followed the scrolled-to control. Traversal now starts from a temporary element at the top of the document, as a user arriving on the page would.
 
 After the tabs pattern was implemented, the reachability check was also changed to skip elements with `tabindex="-1"`. Inactive tabs are intentionally outside the Tab sequence, and their arrow-key access is verified separately by the tabs-pattern check.
+
+## 5. Version 1.2.0: data protection screens
+
+Version 1.2.0 added a storage setup screen, a lock screen, a Data and security page and the security marking banner. Adding these as page states found the following, all fixed before release:
+
+| # | WCAG | Finding | Fix |
+|---|---|---|---|
+| 23 | 2.5.8, 1.4.11 | Password and file inputs were not styled like other fields: 21 px tall with low-contrast default borders | Password and file inputs use the standard field style (3:1 border, 24 px or more); the non-text contrast check now covers them |
+| 24 | 2.5.8 | “Show passphrase” checkboxes were 18 by 18 px | Enlarged to 24 by 24 px |
+| 25 | 1.4.10, 1.4.12 | The file input overflowed by 24 px at 320 px with text spacing | Field style constrains its width |
+| 26 | 4.1.2 (visual) | The Lock button showed on the setup and lock screens because a component display rule overrode the `hidden` attribute | A global `[hidden]` rule; the security tests check button visibility in every state |
+
+The harness was also adjusted: it injects axe-core with the Content Security Policy bypassed in test contexts only (the CSP is verified separately by `tests/security/run.mjs`), and every page load starts from `about:blank` so that hash URLs reload fully.
+

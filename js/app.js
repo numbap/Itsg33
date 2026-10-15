@@ -1,5 +1,15 @@
 // UI layer: hash routing, rendering and event handling. All data stays in the
-// browser (localStorage), with JSON import/export for sharing assessments.
+// browser: encrypted, in memory only, or (Unclassified only) unencrypted in
+// localStorage. See js/storage.js and policies/protected-b.md.
+
+// Refuse to run inside a frame. Any page on the same origin (on github.io, every
+// project site of the same account) could otherwise read the decrypted assessment
+// out of a framed copy. Content Security Policy frame-ancestors cannot be set from
+// a <meta> tag, so this check is the available defence on static hosting.
+if (window.top !== window.self) {
+  document.body.textContent = "For security, the ITSG-33 Compliance Navigator cannot be used inside a frame. Open it directly in a browser tab.";
+  throw new Error("Refusing to run inside a frame");
+}
 
 import {
   ANSWER_OPTIONS, APPLICABILITY, CONTROLS, CONTROL_MAP, FAMILIES, FAMILY_MAP, OVERRIDE_OPTIONS, STATUS,
@@ -10,19 +20,12 @@ import { CLASSES } from "./data/families.js";
 import { PROFILE_FIELDS, PROFILE_DEFAULTS, PROFILE_LABELS, profileWarnings } from "./data/scoping.js";
 import { buildReportModel, esc, reportToCSV, reportToHTML, reportToMarkdown } from "./report.js";
 import { SAMPLE_TEXT, sampleState } from "./sample.js";
+import { KEYS, LOCK_OPTIONS, MARKINGS, MODES, PolicyError, Store, modeAllowed } from "./storage.js";
+import { MIN_PASSPHRASE } from "./vault.js";
 
-const STORAGE_KEY = "itsg33-navigator-state";
 const app = document.getElementById("app");
 
 // ------------------------------------------------------------------ state
-
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return migrate(JSON.parse(raw));
-  } catch { /* storage unavailable or corrupt: start fresh */ }
-  return newState();
-}
 
 function migrate(s) {
   const base = newState();
@@ -35,16 +38,23 @@ function migrate(s) {
   };
 }
 
-let state = load();
+let browserStorage = null;
+try { browserStorage = window.localStorage; } catch { /* blocked: memory mode only */ }
+const store = new Store(browserStorage ?? { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); }, removeItem() {} });
+
+// null while the setup or lock screen is showing.
+let state = store.status() === "ready" ? migrate(store.loadReady() ?? newState()) : null;
 let saveTimer;
 
 function save() {
+  if (!state) return;
   state.updatedAt = new Date().toISOString();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
-  }, 250);
+  saveTimer = setTimeout(() => store.save(state), 250);
 }
+
+const marking = () => MARKINGS[store.settings?.marking] ?? null;
+const isProtected = () => !!marking()?.protected;
 
 function setAnswer(id, patch) {
   state.answers[id] = { ...getAnswer(state, id), ...patch };
@@ -86,7 +96,17 @@ function download(name, content, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const slug = () => (state.profile.productName || "product").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "product";
+const slug = () => {
+  const base = (state.profile.productName || "product").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "product";
+  return marking() ? `${base}-${marking().banner.replace(/ /g, "-")}` : base;
+};
+
+// Plain-text exports cannot be encrypted (Markdown, CSV); for protected
+// assessments the user confirms they will store the file appropriately.
+function confirmPlainExport() {
+  if (!isProtected()) return true;
+  return confirm(`This file will not be encrypted. It contains ${marking().label} information: mark it, and store or send it only on systems approved for ${marking().label}. Continue?`);
+}
 const pct = (x) => `${Math.round(x * 100)}%`;
 const list = (items) => `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
 
@@ -97,7 +117,7 @@ function pills(r) {
 
 function progressRing(value, label) {
   const deg = Math.round(value * 360);
-  return `<div class="ring" style="--deg:${deg}deg" role="img" aria-label="${label} ${pct(value)}"><span>${pct(value)}</span></div>`;
+  return `<div class="ring" data-deg="${deg}" role="img" aria-label="${label} ${pct(value)}"><span>${pct(value)}</span></div>`;
 }
 
 // ------------------------------------------------------------------ views
@@ -132,12 +152,11 @@ function viewHome() {
 
   <section class="card">
     <h2 class="h4">Your data</h2>
-    <p class="muted">Everything is saved in this browser only. Export the assessment to share it or move it to another computer.</p>
+    <p>Marked <strong>${esc(marking().label)}</strong> · ${esc(MODES[store.settings.mode].label)}. Nothing is sent to any server.</p>
     <div class="actions">
-      <button class="btn" data-action="export-json">Export assessment (JSON)</button>
-      <label class="btn file-btn">Import assessment<input type="file" class="sr-only" accept="application/json,.json" data-action="import-json"></label>
+      <a class="btn" href="#/security">Data and security: export, import, passphrase</a>
       <button class="btn" data-action="load-sample">Load sample product</button>
-      <button class="btn danger" data-action="reset">Start over</button>
+      <button class="btn danger" data-action="reset">Start a new assessment</button>
     </div>
   </section>`;
 }
@@ -435,7 +454,7 @@ function viewControl(id) {
 }
 
 function viewReport() {
-  const m = buildReportModel(state);
+  const m = buildReportModel(state, { marking: marking()?.banner });
   return `
   <div class="page-head no-print"><h1>4. Compliance report</h1>
     <p class="lead">Generated from your scope, document review and questionnaire answers. Update answers at any time and the report updates.</p>
@@ -443,10 +462,276 @@ function viewReport() {
       <button class="btn primary" data-action="print">Print / save as PDF</button>
       <button class="btn" data-action="export-md">Download Markdown</button>
       <button class="btn" data-action="export-csv">Download CSV (control list)</button>
-      <button class="btn" data-action="export-json">Export assessment (JSON)</button>
-    </div></div>
+    </div>
+    ${isProtected() ? `<p class="small">Downloads and printouts are not encrypted. Mark them and keep them only on systems approved for ${esc(marking().label)}.</p>` : ""}</div>
   <div class="card">${reportToHTML(m)}</div>`;
 }
+
+// ------------------------------------------------------------------ data protection views
+
+const radios = (name, options, checked, extra = () => "") => `<div class="choices stacked">${options.map(([value, label, hint]) => `
+  <label class="choice"><input type="radio" name="${name}" value="${value}" ${value === checked ? "checked" : ""} ${extra(value)}><span>${esc(label)}${hint ? `<small>${esc(hint)}</small>` : ""}</span></label>`).join("")}</div>`;
+
+const MARKING_OPTIONS = [
+  ["pb", "Protected B", "Typical for an assessment of a Protected B system: it describes the system's weaknesses."],
+  ["pa", "Protected A", ""],
+  ["unclassified", "Unclassified", ""],
+];
+const MODE_OPTIONS = [
+  ["encrypted", MODES.encrypted.label, "Recommended. Saved on this device with AES-256 encryption under your passphrase; locks after inactivity."],
+  ["memory", MODES.memory.label, "Nothing is written to this device. Export an encrypted file before closing the tab."],
+  ["plain", MODES.plain.label, "Readable by anyone with access to this browser profile. Not allowed for Protected information."],
+];
+
+function passFields(prefix, { legend = "Passphrase", current = false, confirmField = true, hidden = false } = {}) {
+  const auto = current ? "current-password" : "new-password";
+  return `<fieldset class="pass-fields" id="${prefix}-fields" ${hidden ? "hidden" : ""}><legend>${legend}</legend>
+    ${current ? "" : `<p class="why" id="${prefix}-hint">At least ${MIN_PASSPHRASE} characters; four or more unrelated words work well. It cannot be recovered if forgotten, so store it in your password manager.</p>`}
+    <div class="field"><label class="field-label" for="${prefix}">Passphrase</label>
+      <input type="password" id="${prefix}" name="${prefix}" autocomplete="${auto}" spellcheck="false" ${current ? "" : `aria-describedby="${prefix}-hint"`}></div>
+    ${confirmField ? `<div class="field"><label class="field-label" for="${prefix}-2">Confirm passphrase</label>
+      <input type="password" id="${prefix}-2" name="${prefix}-2" autocomplete="${auto}" spellcheck="false"></div>` : ""}
+    <label class="check"><input type="checkbox" data-action="show-pass" data-target="${prefix}"> Show passphrase</label>
+  </fieldset>`;
+}
+
+function viewSetup() {
+  const legacy = store.hasLegacyPlain();
+  return `
+  <div class="page-head"><h1>Choose how this browser keeps your work</h1>
+    <p class="lead">This application runs entirely in your browser. Nothing you enter is sent to any server. Decide how the assessment is kept on this device.</p></div>
+  ${legacy ? `<p class="callout warn">An unencrypted assessment from an earlier version was found in this browser. Your choice below will protect it: it is encrypted, kept only in this tab, or left unencrypted (Unclassified only).</p>` : ""}
+  ${store.available ? "" : `<p class="callout warn">This browser does not allow websites to store data (for example, a private window), so only “Not saved” is available.</p>`}
+  <form id="setup-form" class="card narrow" novalidate>
+    <div class="form-errors"></div>
+    <fieldset id="marking-field"><legend>Security marking of this assessment</legend>${radios("marking", MARKING_OPTIONS, "pb")}</fieldset>
+    <fieldset id="mode-field"><legend>How to keep your work</legend>${radios("mode", MODE_OPTIONS, store.available ? "encrypted" : "memory")}</fieldset>
+    ${passFields("setup-pass", { hidden: !store.available })}
+    <button class="btn primary" type="submit">Continue</button>
+  </form>
+  <p class="narrow small">Read the <a href="policies/privacy.html">privacy policy</a> and <a href="policies/protected-b.html">how this tool handles Protected B</a>.</p>`;
+}
+
+function viewLock() {
+  return `
+  <div class="page-head"><h1>Assessment locked</h1>
+    <p class="lead">Your assessment is encrypted in this browser. Enter your passphrase to continue.</p></div>
+  <form id="unlock-form" class="card narrow" novalidate>
+    <div class="form-errors"></div>
+    ${passFields("unlock-pass", { legend: "Unlock", current: true, confirmField: false })}
+    <button class="btn primary" type="submit">Unlock</button>
+  </form>
+  <section class="card narrow" aria-labelledby="forgot-h"><h2 class="h5" id="forgot-h">Forgotten passphrase?</h2>
+    <p>The passphrase cannot be recovered and the data cannot be decrypted without it. You can erase the encrypted assessment and start again.</p>
+    <button type="button" class="btn danger" data-action="erase-all">Erase all data and start over</button></section>`;
+}
+
+function viewSecurity() {
+  const st = store.settings;
+  const enc = st.mode === "encrypted";
+  return `
+  <div class="page-head"><h1>Data and security</h1>
+    <p class="lead">Everything stays on this device. Nothing is sent to a server, and the Content Security Policy blocks the page from making network connections.</p></div>
+  <section class="card" aria-labelledby="sec-status"><h2 class="h4" id="sec-status">Current settings</h2>
+    <dl class="kv-list">
+      <div><dt>Security marking</dt><dd>${esc(marking().label)}</dd></div>
+      <div><dt>Storage</dt><dd>${esc(MODES[st.mode].label)}</dd></div>
+      <div><dt>Auto-lock</dt><dd>${enc ? (st.lockMinutes ? `After ${st.lockMinutes} minutes of inactivity` : "Off") : "Not applicable (not encrypted)"}</dd></div>
+    </dl>
+    <p class="small">See the <a href="policies/privacy.html">privacy policy</a> and <a href="policies/protected-b.html">Protected B handling and caveats</a>.</p></section>
+
+  <form id="marking-form" class="card" novalidate><h2 class="h4">Security marking</h2><div class="form-errors"></div>
+    <fieldset id="marking-field"><legend>Marking shown on every screen, report and export</legend>${radios("marking", MARKING_OPTIONS, st.marking)}</fieldset>
+    <button class="btn" type="submit">Save marking</button></form>
+
+  <form id="mode-form" class="card" novalidate><h2 class="h4">Storage</h2><div class="form-errors"></div>
+    <fieldset id="mode-field"><legend>How to keep your work</legend>${radios("mode", MODE_OPTIONS, st.mode)}</fieldset>
+    ${passFields("mode-pass", { legend: "Passphrase for encrypted storage", hidden: true })}
+    <p class="small muted">Changing storage rewrites or removes the copy in this browser. Choosing “Not saved” deletes the stored copy now.</p>
+    <button class="btn" type="submit">Change storage</button></form>
+
+  ${enc ? `<form id="pass-form" class="card" novalidate><h2 class="h4">Change passphrase</h2><div class="form-errors"></div>
+    ${passFields("new-pass", { legend: "New passphrase" })}
+    <button class="btn" type="submit">Change passphrase</button></form>
+
+  <form id="lock-form" class="card" novalidate><h2 class="h4">Auto-lock</h2><div class="form-errors"></div>
+    <div class="field"><label class="field-label" for="lock-min">Lock after this much inactivity</label>
+    <select id="lock-min" name="lock-min">${LOCK_OPTIONS.map((m) => `<option value="${m}" ${m === st.lockMinutes ? "selected" : ""}>${m ? (m >= 60 ? `${m / 60} hour${m > 60 ? "s" : ""}` : `${m} minutes`) : "Never"}</option>`).join("")}</select></div>
+    <p class="why">Locking clears the decrypted assessment from the page. Nothing is lost; unlock with your passphrase.</p>
+    <button class="btn" type="submit">Save auto-lock</button></form>` : ""}
+
+  <form id="export-form" class="card" novalidate><h2 class="h4">Export</h2><div class="form-errors"></div>
+    <p>Encrypted files can be moved to another computer or shared through approved channels. Use a different passphrase from your browser passphrase and send it separately.</p>
+    ${passFields("export-pass", { legend: "Passphrase for the exported file" })}
+    <div class="actions"><button class="btn primary" type="submit">Download encrypted file</button>
+    <button type="button" class="btn" data-action="export-json">Download unencrypted file</button></div></form>
+
+  <form id="import-form" class="card" novalidate><h2 class="h4">Import</h2><div class="form-errors"></div>
+    <div class="field"><label class="field-label" for="import-file">Assessment file (encrypted or unencrypted)</label>
+      <input type="file" id="import-file" name="import-file" accept="application/json,.json"></div>
+    <div class="field"><label class="field-label" for="import-pass">Passphrase (encrypted files only)</label>
+      <input type="password" id="import-pass" name="import-pass" autocomplete="off" spellcheck="false"></div>
+    <p class="small muted">Importing replaces the current assessment.</p>
+    <button class="btn" type="submit">Import</button></form>
+
+  <section class="card" aria-labelledby="erase-h"><h2 class="h4" id="erase-h">Erase</h2>
+    <p>Remove the assessment, settings and preferences this application has stored in this browser.</p>
+    ${enc ? `<div class="actions"><button type="button" class="btn" data-action="lock-now">Lock now</button>` : `<div class="actions">`}
+    <button type="button" class="btn danger" data-action="erase-all">Erase all data from this browser</button></div></section>`;
+}
+
+// Accessible form errors: a summary that takes focus, linked to each field,
+// plus aria-invalid and an inline message on the field itself (WCAG 3.3.1, 3.3.3).
+const FIELD_TARGET = {
+  marking: "[name=marking]", mode: "[name=mode]", passphrase: "input[type=password]", lock: "#lock-min",
+  "export-passphrase": "#export-pass", "import-file": "#import-file", "import-passphrase": "#import-pass",
+};
+
+function clearErrors(form) {
+  form.querySelector(".form-errors").innerHTML = "";
+  form.querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute("aria-invalid"));
+  form.querySelectorAll(".field-error").forEach((el) => el.remove());
+}
+
+function showError(form, err) {
+  clearErrors(form);
+  const target = form.querySelector(FIELD_TARGET[err.field] ?? "input, select") ?? form.querySelector("input, select");
+  const id = target?.id || `${form.id}-err-target`;
+  if (target && !target.id) target.id = id;
+  const msgId = `${form.id}-error`;
+  if (target) {
+    target.setAttribute("aria-invalid", "true");
+    const host = target.closest("fieldset") ?? target.closest(".field") ?? target.parentElement;
+    host.insertAdjacentHTML("afterbegin", `<p class="field-error" id="${msgId}">${esc(err.message)}</p>`);
+    const described = (target.getAttribute("aria-describedby") ?? "").split(" ").filter((x) => x && x !== msgId);
+    target.setAttribute("aria-describedby", [msgId, ...described].join(" "));
+  }
+  const box = form.querySelector(".form-errors");
+  box.innerHTML = `<div class="error-summary" role="alert" tabindex="-1"><h2 class="h5">There is a problem</h2>
+    <ul><li><a href="#${id}" data-focus="${id}">${esc(err.message)}</a></li></ul></div>`;
+  box.firstElementChild.focus();
+}
+
+async function busy(form, fn) {
+  const btn = form.querySelector("button[type=submit]");
+  btn.disabled = true;
+  form.setAttribute("aria-busy", "true");
+  try { await fn(); } catch (e) {
+    if (e instanceof PolicyError || e.name === "WrongPassphraseError") showError(form, e instanceof PolicyError ? e : new PolicyError("The passphrase is incorrect.", "passphrase"));
+    else showError(form, new PolicyError(e.message || "Something went wrong.", ""));
+  } finally {
+    if (form.isConnected) { btn.disabled = false; form.removeAttribute("aria-busy"); }
+  }
+}
+
+const formValue = (form, name) => new FormData(form).get(name) ?? "";
+
+async function onSubmit(form) {
+  const v = (n) => formValue(form, n);
+  switch (form.id) {
+    case "setup-form": return busy(form, async () => {
+      const legacy = store.legacyState();
+      const initial = migrate(legacy ?? newState());
+      await store.setup({ mode: v("mode"), marking: v("marking"), passphrase: v("setup-pass"), confirm: v("setup-pass-2"), state: initial });
+      state = initial;
+      afterUnlock(`Ready. ${MODES[store.settings.mode].label}.`);
+    });
+    case "unlock-form": return busy(form, async () => {
+      state = migrate(await store.unlock(v("unlock-pass")));
+      afterUnlock("Unlocked.");
+    });
+    case "marking-form": return busy(form, async () => {
+      store.setMarking(v("marking"));
+      await store.save(state);
+      updateChrome(); rerender(); toast(`Marking set to ${marking().label}.`);
+    });
+    case "mode-form": return busy(form, async () => {
+      const mode = v("mode");
+      if (mode === store.settings.mode) throw new PolicyError(`Storage is already “${MODES[mode].label}”.`, "mode");
+      if (!modeAllowed(mode, store.settings.marking)) throw new PolicyError(`${marking().label} information cannot be stored unencrypted.`, "mode");
+      await store.changeMode(mode, { passphrase: v("mode-pass"), confirm: v("mode-pass-2"), state });
+      updateChrome(); armAutoLock(); rerender(); toast(`Storage changed: ${MODES[mode].label}.`);
+    });
+    case "pass-form": return busy(form, async () => {
+      await store.changePassphrase(v("new-pass"), v("new-pass-2"), state);
+      rerender(); toast("Passphrase changed.");
+    });
+    case "lock-form": return busy(form, async () => {
+      store.setLockMinutes(Number(v("lock-min")));
+      armAutoLock(); rerender(); toast("Auto-lock saved.");
+    });
+    case "export-form": return busy(form, async () => {
+      const env = await store.exportEncrypted(state, v("export-pass"), v("export-pass-2"));
+      download(`itsg33-${slug()}.encrypted.json`, JSON.stringify(env, null, 2), "application/json");
+      form.reset(); toast("Encrypted file downloaded.");
+    });
+    case "import-form": return busy(form, async () => {
+      const file = form.querySelector("#import-file").files[0];
+      if (!file) throw new PolicyError("Choose a file to import.", "import-file");
+      const r = await store.importFile(await file.text(), v("import-pass"));
+      if (r.marking && r.marking !== store.settings.marking) {
+        if (!modeAllowed(store.settings.mode, r.marking)) throw new PolicyError(`The file is marked ${MARKINGS[r.marking].label}, which cannot be stored unencrypted. Change storage first.`, "import-file");
+        store.setMarking(r.marking);
+      }
+      state = migrate(r.state);
+      save(); updateChrome(); rerender(); toast("Assessment imported.");
+    });
+  }
+}
+
+function afterUnlock(msg) {
+  updateChrome();
+  armAutoLock();
+  if (location.hash && location.hash !== "#/") route();
+  else route();
+  toast(msg);
+}
+
+// Security marking banner and lock button in the header.
+function updateChrome() {
+  const m = marking();
+  const banner = document.getElementById("marking");
+  const mode = store.settings ? MODES[store.settings.mode].short : null;
+  banner.className = `marking ${m?.protected ? "is-protected" : ""}`;
+  banner.innerHTML = `${m ? `<strong>${esc(m.banner)}</strong> ` : ""}<span>${mode ? `${esc(mode)} · ` : ""}Data stays on this device</span>`;
+  document.getElementById("lock-btn").hidden = !(state && store.settings?.mode === "encrypted");
+}
+
+// Auto-lock after inactivity (encrypted mode only). The delay is user-adjustable,
+// including off, and locking loses no work (WCAG 2.2.1).
+let lockTimer;
+function armAutoLock() {
+  clearTimeout(lockTimer);
+  const min = store.settings?.lockMinutes;
+  if (state && store.settings?.mode === "encrypted" && min) lockTimer = setTimeout(() => lockNow(`Locked after ${min} minutes of inactivity.`), min * 60_000);
+}
+for (const ev of ["pointerdown", "keydown", "input"]) document.addEventListener(ev, () => { if (state) armAutoLock(); }, { passive: true });
+
+async function lockNow(msg = "Locked.") {
+  clearTimeout(saveTimer);
+  clearTimeout(lockTimer);
+  if (state) await store.save(state);
+  store.lock();
+  state = null;
+  updateChrome();
+  route();
+  toast(msg);
+}
+
+document.getElementById("lock-btn").addEventListener("click", () => lockNow());
+
+// Work kept only in memory is lost on close; ask the browser to confirm.
+window.addEventListener("beforeunload", (e) => {
+  if (state && store.settings?.mode === "memory" && Object.keys(state.answers).length) e.preventDefault();
+});
+
+// Dynamic sizes are applied through the CSSOM because the Content Security Policy
+// forbids inline style attributes.
+function hydrateStyles() {
+  document.querySelectorAll("[data-deg]").forEach((el) => el.style.setProperty("--deg", `${el.dataset.deg}deg`));
+  document.querySelectorAll("[data-pct]").forEach((el) => { el.style.width = `${el.dataset.pct}%`; });
+}
+new MutationObserver(hydrateStyles).observe(document.body, { childList: true, subtree: true });
 
 // ------------------------------------------------------------------ routing
 
@@ -457,14 +742,18 @@ let libCls = "";
 // "none" leaves it (first load); rerender() restores focus to the same control.
 function route({ focus = "heading" } = {}) {
   const [, view = "", a, b] = location.hash.replace(/^#/, "").split("/");
-  const nav = { "": "home", profile: "profile", review: "review", assess: "assess", report: "report", library: "library", control: "library" }[view] ?? "home";
+  let nav = { "": "home", profile: "profile", review: "review", assess: "assess", report: "report", library: "library", control: "library", security: "security" }[view] ?? "home";
+  if (!state) nav = store.status() === "locked" ? "locked" : "setup";
   document.querySelectorAll("[data-nav]").forEach((el) => {
     el.classList.toggle("active", el.dataset.nav === nav);
     if (el.dataset.nav === nav) el.setAttribute("aria-current", "page");
     else el.removeAttribute("aria-current");
   });
   let html;
-  switch (view) {
+  if (nav === "locked") html = viewLock();
+  else if (nav === "setup") html = viewSetup();
+  else switch (view) {
+    case "security": html = viewSecurity(); break;
     case "profile": html = viewProfile(); break;
     case "review": html = viewReview(); break;
     case "assess": html = viewAssess(a, b); break;
@@ -474,7 +763,9 @@ function route({ focus = "heading" } = {}) {
     default: html = viewHome();
   }
   app.innerHTML = html;
-  document.title = `${nav === "home" ? "" : `${nav[0].toUpperCase()}${nav.slice(1)} · `}ITSG-33 Compliance Navigator`;
+  const TITLES = { home: "", setup: "Set up storage", locked: "Locked", security: "Data and security" };
+  const t = TITLES[nav] ?? `${nav[0].toUpperCase()}${nav.slice(1)}`;
+  document.title = `${t ? `${t} · ` : ""}ITSG-33 Compliance Navigator`;
   const h1 = app.querySelector("h1");
   if (h1) h1.tabIndex = -1;
   if (view === "assess" && b) {
@@ -566,16 +857,14 @@ app.addEventListener("change", async (e) => {
   } else if (t.id === "lib-cls") {
     libCls = t.value;
     updateLibrary();
-  } else if (t.dataset.action === "import-json" && t.files[0]) {
-    try {
-      const data = JSON.parse(await t.files[0].text());
-      if (!data.profile || !data.answers) throw new Error("Not an assessment file");
-      state = migrate(data);
-      save();
-      toast("Assessment imported");
-      rerender();
-    } catch (err) {
-      toast(`Import failed: ${err.message}`);
+  } else if (t.name === "mode" && t.type === "radio") {
+    // Passphrase fields are needed only when switching to encrypted storage.
+    const fields = t.form.querySelector(".pass-fields");
+    if (fields) fields.hidden = !(t.value === "encrypted" && (t.form.id === "setup-form" || store.settings?.mode !== "encrypted"));
+  } else if (t.dataset.action === "show-pass") {
+    for (const id of [t.dataset.target, `${t.dataset.target}-2`]) {
+      const input = document.getElementById(id);
+      if (input) input.type = t.checked ? "text" : "password";
     }
   } else if (t.dataset.action === "load-text" && t.files[0]) {
     let text = await t.files[0].text();
@@ -585,6 +874,11 @@ app.addEventListener("change", async (e) => {
     rerender();
     toast(`Loaded ${t.files[0].name}`);
   }
+});
+
+app.addEventListener("submit", (e) => {
+  e.preventDefault();
+  onSubmit(e.target);
 });
 
 function selectTab(tab) {
@@ -613,6 +907,12 @@ app.addEventListener("keydown", (e) => {
 });
 
 app.addEventListener("click", (e) => {
+  const errLink = e.target.closest("[data-focus]");
+  if (errLink) {
+    e.preventDefault();
+    document.getElementById(errLink.dataset.focus)?.focus();
+    return;
+  }
   const tab = e.target.closest("[data-tab]");
   if (tab) {
     selectTab(tab);
@@ -622,12 +922,25 @@ app.addEventListener("click", (e) => {
   if (!el || el.tagName === "INPUT") return;
   const action = el.dataset.action;
   const actions = {
-    "export-json": () => download(`itsg33-${slug()}.json`, JSON.stringify(state, null, 2), "application/json"),
-    "export-md": () => download(`itsg33-report-${slug()}.md`, reportToMarkdown(buildReportModel(state)), "text/markdown"),
-    "export-csv": () => download(`itsg33-controls-${slug()}.csv`, reportToCSV(buildReportModel(state)), "text/csv"),
+    "export-json": () => confirmPlainExport() && download(`itsg33-${slug()}.json`, JSON.stringify(state, null, 2), "application/json"),
+    "export-md": () => confirmPlainExport() && download(`itsg33-report-${slug()}.md`, reportToMarkdown(buildReportModel(state, { marking: marking()?.banner })), "text/markdown"),
+    "export-csv": () => confirmPlainExport() && download(`itsg33-controls-${slug()}.csv`, reportToCSV(buildReportModel(state, { marking: marking()?.banner })), "text/csv"),
+    "lock-now": () => lockNow(),
+    "erase-all": () => {
+      if (!confirm("Erase the assessment, settings and preferences stored by this application in this browser? This cannot be undone.")) return;
+      clearTimeout(saveTimer);
+      clearTimeout(lockTimer);
+      store.eraseAll();
+      state = null;
+      applyTheme(null);
+      updateChrome();
+      location.hash = "#/";
+      route();
+      toast("All data erased from this browser.");
+    },
     print: () => window.print(),
     reset: () => {
-      if (!confirm("Delete this assessment from this browser? Export it first if you want to keep it.")) return;
+      if (!confirm("Replace the current assessment with a new, empty one? Export it first if you want to keep it.")) return;
       state = newState();
       save();
       rerender();
@@ -712,4 +1025,6 @@ themeBtn.addEventListener("click", () => {
 // ------------------------------------------------------------------ start
 
 window.addEventListener("hashchange", () => { hideToast(); route(); });
+updateChrome();
+armAutoLock();
 route({ focus: "none" });

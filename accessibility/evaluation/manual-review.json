@@ -1,17 +1,17 @@
 {
   "reviewedAt": "2026-10-15",
   "reviewer": "Claude (AI assistant, Anthropic). Self-assessment; no accessibility certification; not independent",
-  "notes": "Code review of templates, styles and event handling; visual inspection in light, dark and forced-colours modes at 320, 1000 and 1280 px; accessibility tree review; all WCAG 2.2 A/AA criteria in accessibility/evaluation/criteria.mjs",
+  "notes": "Version 1.2.0: re-review of all WCAG 2.2 A/AA criteria after adding storage setup, lock screen, Data and security page, marking banner and policy pages; code review; visual inspection in light and dark at 390, 1000 and 1280 px",
   "fingerprint": {
     "files": {
-      "index.html": "40a03c8dc99f2894",
-      "css/styles.css": "32e5793bbeb4b211",
-      "js/app.js": "820b12644a893749",
-      "js/report.js": "188bccc0b2041acc",
-      "scripts/build-vpat.mjs": "69324f2b8e75621f",
+      "index.html": "40fb4776c3c6be8c",
+      "css/styles.css": "26c5c6cd241e971c",
+      "js/app.js": "042d21c305ceaec4",
+      "js/report.js": "f77a01130d5555cc",
+      "scripts/build-vpat.mjs": "8d363473462eca88",
       "accessibility/assets/docs.css": "5c8b73bd2f873c73"
     },
-    "combined": "0cbabeba9d721dbc"
+    "combined": "8d1cc03f968ccbaa"
   },
   "history": [
     {
@@ -19,6 +19,12 @@
       "reviewer": "Claude (AI assistant, Anthropic). Self-assessment; no accessibility certification; not independent",
       "notes": "Code review of templates, styles and event handling; visual inspection in light, dark and forced-colours modes at 320, 1000 and 1280 px; accessibility tree review; all WCAG 2.2 A/AA criteria in accessibility/evaluation/criteria.mjs",
       "fingerprint": "0cbabeba9d721dbc"
+    },
+    {
+      "reviewedAt": "2026-10-15",
+      "reviewer": "Claude (AI assistant, Anthropic). Self-assessment; no accessibility certification; not independent",
+      "notes": "Version 1.2.0: re-review of all WCAG 2.2 A/AA criteria after adding storage setup, lock screen, Data and security page, marking banner and policy pages; code review; visual inspection in light and dark at 390, 1000 and 1280 px",
+      "fingerprint": "8d1cc03f968ccbaa"
     }
   ]
 }

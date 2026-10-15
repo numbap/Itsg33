@@ -175,7 +175,7 @@ export async function nonTextContrast(page) {
   const failures = await page.evaluate(() => {
     const A = window.__a11y;
     const out = [];
-    const targets = [...document.querySelectorAll("input[type=text], input[type=search], input[type=date], textarea, select, .seg, .choice span, .seg-opt span")]
+    const targets = [...document.querySelectorAll("input[type=text], input[type=search], input[type=date], input[type=password], input[type=file], textarea, select, .seg, .choice span, .seg-opt span")]
       .filter((e) => A.visible(e));
     for (const el of targets) {
       const cs = getComputedStyle(el);
@@ -246,7 +246,7 @@ export async function routeFocus(page, base) {
   await page.goto(`${base}/#/`);
   const failures = [];
   const titles = new Set();
-  for (const nav of ["profile", "review", "assess", "report", "library", "home"]) {
+  for (const nav of ["profile", "review", "assess", "report", "library", "security", "home"]) {
     await page.focus(`[data-nav="${nav}"]`);
     await page.keyboard.press("Enter");
     await page.waitForTimeout(150);

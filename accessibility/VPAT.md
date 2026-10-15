@@ -2,7 +2,7 @@
 
 Based on VPAT® Version 2.5Rev (EU edition: WCAG and EN 301 549)
 
-**Name of product and version:** ITSG-33 Compliance Navigator 1.1.0  
+**Name of product and version:** ITSG-33 Compliance Navigator 1.2.0  
 **Report date:** 2026-10-15 (manual evaluation); automated results recompiled with each commit  
 **Product description:** A browser-based tool for reviewing a software product against Canada's ITSG-33 security controls: scoping interview, documentation review, a guided questionnaire with “Gemba walk” guidance for each control, and a generated compliance report. Runs entirely in the browser with no server-side processing or authentication.  
 **Contact information:** https://github.com/numbap/Itsg33/issues/new?labels=accessibility&title=Accessibility%3A%20  
@@ -11,8 +11,8 @@ Based on VPAT® Version 2.5Rev (EU edition: WCAG and EN 301 549)
 
 ## Build status
 
-- Automated suite passed: 51 axe-core runs with no WCAG violations, and 275 scripted checks passed across 17 page states (axe-core 4.14.0, Chromium (Playwright 1.56.1)).
-- Manual review is current: the code-review and visual judgements were made on the same user-interface code this report describes (fingerprint 0cbabeba9d721dbc).
+- Automated suite passed: 75 axe-core runs with no WCAG violations, and 403 scripted checks passed across 25 page states (axe-core 4.14.0, Chromium (Playwright 1.56.1)).
+- Manual review is current: the code-review and visual judgements were made on the same user-interface code this report describes (fingerprint 8d1cc03f968ccbaa).
 
 ## Notes
 
@@ -31,7 +31,7 @@ Based on VPAT® Version 2.5Rev (EU edition: WCAG and EN 301 549)
 
 ## WCAG 2.x Report
 
-Summary: 42 Supports, 14 Not Applicable.
+Summary: 45 Supports, 11 Not Applicable.
 
 ### Table 1: Success Criteria, Level A
 
@@ -46,10 +46,10 @@ Summary: 42 Supports, 14 Not Applicable.
 | 1.3.3 Sensory Characteristics | Supports | Instructions refer to sections by name, not by shape, size or position. One location-based instruction found during evaluation (“right-hand panel”) was reworded. Evidence: code review. |
 | 1.4.1 Use of Color | Supports | Status, risk, applicability and severity are always shown as text. Selected answers show a check mark and bold text in addition to colour. Links within text are underlined. Evidence: 1 axe-core rule passed (link-in-text-block); code review, visual inspection. |
 | 1.4.2 Audio Control | Not Applicable | The product plays no audio. Evidence: code review. |
-| 2.1.1 Keyboard | Supports | All functions use native, keyboard-operable controls. Scripted checks Tab through every page state and confirm every focusable control is reached, that button-styled file pickers are keyboard operable, that the Gemba tabs work with arrow keys, and that questionnaire answers can be selected with the keyboard. Evidence: 1 axe-core rule passed (scrollable-region-focusable); scripted checks keyboard-reach, lookalike-controls, tabs-pattern, status-messages (53 runs, all passed); code review. |
-| 2.1.2 No Keyboard Trap | Supports | Scripted traversal confirms focus moves through and out of every page state. Evidence: scripted checks no-keyboard-trap (34 runs, all passed). |
+| 2.1.1 Keyboard | Supports | All functions use native, keyboard-operable controls. Scripted checks Tab through every page state and confirm every focusable control is reached, that button-styled file pickers are keyboard operable, that the Gemba tabs work with arrow keys, and that questionnaire answers can be selected with the keyboard. Evidence: 1 axe-core rule passed (scrollable-region-focusable); scripted checks keyboard-reach, lookalike-controls, tabs-pattern, status-messages (77 runs, all passed); code review. |
+| 2.1.2 No Keyboard Trap | Supports | Scripted traversal confirms focus moves through and out of every page state. Evidence: scripted checks no-keyboard-trap (50 runs, all passed). |
 | 2.1.4 Character Key Shortcuts | Not Applicable | No single-character shortcuts are defined. Arrow, Home and End keys act only while a tab has focus, and Escape dismisses the confirmation message. Evidence: code review. |
-| 2.2.1 Timing Adjustable | Not Applicable | The product sets no time limits. Confirmation messages stay visible until dismissed; an earlier auto-hiding message was changed during evaluation. Evidence: code review. |
+| 2.2.1 Timing Adjustable | Supports | The only time limit is the auto-lock for encrypted Protected storage (a security safeguard). Users can adjust it before encountering it, from 15 minutes to 8 hours (more than ten times the default), or turn it off on the Data and security page. Locking loses no work: the assessment is saved before locking and restored on unlock. Confirmation messages stay visible until dismissed. Evidence: code review. |
 | 2.2.2 Pause, Stop, Hide | Not Applicable | There is no moving, blinking, scrolling or auto-updating content. Evidence: code review. |
 | 2.3.1 Three Flashes or Below Threshold | Supports | No content flashes. Transitions are disabled when the user prefers reduced motion. Evidence: code review. |
 | 2.4.1 Bypass Blocks | Supports | A skip link is the first focusable element, and pages use banner, navigation, main and contentinfo landmarks. Evidence: 1 axe-core rule passed (bypass); code review. |
@@ -64,11 +64,11 @@ Summary: 42 Supports, 14 Not Applicable.
 | 3.2.1 On Focus | Supports | Receiving focus never changes context. Evidence: code review. |
 | 3.2.2 On Input | Supports | Changing a field updates related summaries, statuses and search results on the same page but never navigates, submits or moves focus. Evidence: code review. |
 | 3.2.6 Consistent Help | Supports | Links to the accessibility statement and to the problem-reporting page appear in the same footer position on every application and documentation page. Evidence: code review. |
-| 3.3.1 Error Identification | Supports | The few possible input errors (analyzing empty text, importing a file that is not an assessment) are described in text and announced through a live region. Evidence: code review. |
+| 3.3.1 Error Identification | Supports | Form errors (passphrase rules, a wrong passphrase, a storage choice not allowed for the marking, import problems) appear in an error summary that receives focus and links to the field, with an inline message on the field, aria-invalid and aria-describedby. Other errors (analyzing empty text) are described in text and announced. Evidence: code review. |
 | 3.3.2 Labels or Instructions | Supports | Every field has a visible label; scoping questions also explain why they are asked. Evidence: 1 axe-core rule passed (form-field-multiple-labels); code review. |
 | 3.3.7 Redundant Entry | Supports | Information entered once (product name, organization, scope) is reused automatically in statements and reports; nothing has to be entered twice. Evidence: code review. |
 | 4.1.1 Parsing (obsolete and removed in WCAG 2.2) | Supports | Removed in WCAG 2.2 and treated as always satisfied. For WCAG 2.0 and 2.1: markup is generated from templates with unique IDs, and the browser DOM is checked by axe-core for duplicate IDs referenced by ARIA. Evidence: code review. |
-| 4.1.2 Name, Role, Value | Supports | Native controls are used throughout. Custom patterns expose correct roles and states: tabs (tablist/tab/tabpanel, aria-selected, roving tabindex), the theme toggle (aria-pressed), the current page (aria-current) and disclosure (details/summary). Evidence: 17 axe-core rules passed (aria-allowed-attr, aria-conditional-attr, aria-deprecated-role, aria-hidden-body, aria-hidden-focus, aria-prohibited-attr, aria-required-attr, aria-roles, aria-valid-attr, aria-valid-attr-value, button-name, duplicate-id-aria, label, link-name, nested-interactive, select-name, summary-name); scripted checks lookalike-controls, route-focus, tabs-pattern (19 runs, all passed); accessibility tree inspection. |
+| 4.1.2 Name, Role, Value | Supports | Native controls are used throughout. Custom patterns expose correct roles and states: tabs (tablist/tab/tabpanel, aria-selected, roving tabindex), the theme toggle (aria-pressed), the current page (aria-current) and disclosure (details/summary). Evidence: 17 axe-core rules passed (aria-allowed-attr, aria-conditional-attr, aria-deprecated-role, aria-hidden-body, aria-hidden-focus, aria-prohibited-attr, aria-required-attr, aria-roles, aria-valid-attr, aria-valid-attr-value, button-name, duplicate-id-aria, label, link-name, nested-interactive, select-name, summary-name); scripted checks lookalike-controls, route-focus, tabs-pattern (27 runs, all passed); accessibility tree inspection. |
 
 ### Table 2: Success Criteria, Level AA
 
@@ -77,27 +77,27 @@ Summary: 42 Supports, 14 Not Applicable.
 | 1.2.4 Captions (Live) | Not Applicable | The product contains no live audio. Evidence: code review. |
 | 1.2.5 Audio Description (Prerecorded) | Not Applicable | The product contains no video. Evidence: code review. |
 | 1.3.4 Orientation | Supports | No orientation lock; layouts were checked at portrait phone widths (320 px) and desktop widths. Evidence: code review. |
-| 1.3.5 Identify Input Purpose | Not Applicable | No field collects information about the user. Fields describe the product being assessed (name, responsible organization, scope), which is not one of the WCAG input purposes for the user. Evidence: code review. |
+| 1.3.5 Identify Input Purpose | Supports | Passphrase fields declare autocomplete="new-password" or "current-password". Other fields describe the product being assessed (name, responsible organization, scope), not the user, so no WCAG input purpose applies to them. Evidence: 1 axe-core rule passed (autocomplete-valid); code review, accessibility tree inspection. |
 | 1.4.3 Contrast (Minimum) | Supports | axe-core contrast checks pass in light and dark themes on every page state. Dark-theme accent colours were changed during evaluation to meet 4.5:1. Evidence: 1 axe-core rule passed (color-contrast); visual inspection. |
-| 1.4.4 Resize Text | Supports | No loss of content or function at 200% zoom (640 CSS px viewport); text scales with browser zoom. Evidence: 1 axe-core rule passed (meta-viewport); scripted checks reflow-640 (17 runs, all passed); visual inspection. |
+| 1.4.4 Resize Text | Supports | No loss of content or function at 200% zoom (640 CSS px viewport); text scales with browser zoom. Evidence: 1 axe-core rule passed (meta-viewport); scripted checks reflow-640 (25 runs, all passed); visual inspection. |
 | 1.4.5 Images of Text | Supports | No images of text are used. Evidence: code review. |
-| 1.4.10 Reflow | Supports | No two-dimensional scrolling at 320 CSS px on any page state. Data tables in the report scroll within their own container, which WCAG allows for content that needs two-dimensional layout. The header stops being sticky on narrow screens so it does not take space at high zoom. Evidence: scripted checks reflow-320 (17 runs, all passed); visual inspection. |
-| 1.4.11 Non-text Contrast | Supports | Field and choice boundaries have at least 3:1 contrast in both themes, and focus indicators have at least 3:1 against their background (both verified by scripted checks). Field borders were darkened during evaluation. Evidence: scripted checks focus-visible, non-text-contrast (68 runs, all passed); visual inspection. |
-| 1.4.12 Text Spacing | Supports | With the WCAG text-spacing overrides applied at 1280 px and 320 px, no content is clipped and no horizontal scrolling appears. Evidence: 1 axe-core rule passed (avoid-inline-spacing); scripted checks text-spacing (34 runs, all passed). |
+| 1.4.10 Reflow | Supports | No two-dimensional scrolling at 320 CSS px on any page state. Data tables in the report scroll within their own container, which WCAG allows for content that needs two-dimensional layout. The header stops being sticky on narrow screens so it does not take space at high zoom. Evidence: scripted checks reflow-320 (25 runs, all passed); visual inspection. |
+| 1.4.11 Non-text Contrast | Supports | Field and choice boundaries have at least 3:1 contrast in both themes, and focus indicators have at least 3:1 against their background (both verified by scripted checks). Field borders were darkened during evaluation. Evidence: scripted checks focus-visible, non-text-contrast (100 runs, all passed); visual inspection. |
+| 1.4.12 Text Spacing | Supports | With the WCAG text-spacing overrides applied at 1280 px and 320 px, no content is clipped and no horizontal scrolling appears. Evidence: 1 axe-core rule passed (avoid-inline-spacing); scripted checks text-spacing (50 runs, all passed). |
 | 1.4.13 Content on Hover or Focus | Supports | No custom hover or focus pop-ups. Some badges have a native title tooltip, which is controlled by the browser. Evidence: code review. |
 | 2.4.5 Multiple Ways | Supports | Main navigation, a family sidebar, previous/next links, and a searchable library of all controls. Evidence: code review. |
 | 2.4.6 Headings and Labels | Supports | Headings and labels describe their topic or purpose; repeated “Questions” headings include the control ID for assistive technology. Evidence: code review, accessibility tree inspection. |
-| 2.4.7 Focus Visible | Supports | Every focus stop on every page state shows an outline (scripted check), including visually hidden radio and file inputs, whose indicator appears on their visible label, and the date input's calendar button. Evidence: scripted checks focus-visible (34 runs, all passed); visual inspection. |
-| 2.4.11 Focus Not Obscured (Minimum) | Supports | Scroll padding keeps focused elements clear of the sticky header and of the confirmation message, which can also be dismissed with Escape. The scripted check confirms no focused element is hidden on any page state, including one with the message showing. Evidence: scripted checks focus-not-obscured (34 runs, all passed); code review. |
+| 2.4.7 Focus Visible | Supports | Every focus stop on every page state shows an outline (scripted check), including visually hidden radio and file inputs, whose indicator appears on their visible label, and the date input's calendar button. Evidence: scripted checks focus-visible (50 runs, all passed); visual inspection. |
+| 2.4.11 Focus Not Obscured (Minimum) | Supports | Scroll padding keeps focused elements clear of the sticky header and of the confirmation message, which can also be dismissed with Escape. The scripted check confirms no focused element is hidden on any page state, including one with the message showing. Evidence: scripted checks focus-not-obscured (50 runs, all passed); code review. |
 | 2.5.7 Dragging Movements | Not Applicable | No dragging is required. (Text area resize handles are provided by the browser.) Evidence: code review. |
-| 2.5.8 Target Size (Minimum) | Supports | Every pointer target is at least 24 by 24 CSS px, except links inside sentences, which WCAG exempts (scripted check). The skip link and footer links were enlarged during evaluation. Evidence: 1 axe-core rule passed (target-size); scripted checks target-size (17 runs, all passed). |
+| 2.5.8 Target Size (Minimum) | Supports | Every pointer target is at least 24 by 24 CSS px, except links inside sentences, which WCAG exempts (scripted check). The skip link and footer links were enlarged during evaluation. Evidence: 1 axe-core rule passed (target-size); scripted checks target-size (25 runs, all passed). |
 | 3.1.2 Language of Parts | Supports | All product text is English. Text that users type (for example French notes) is shown as entered without a language tag, because the product cannot know its language. Evidence: code review. |
 | 3.2.3 Consistent Navigation | Supports | The header navigation and footer are identical and in the same order on every view. Evidence: code review. |
 | 3.2.4 Consistent Identification | Supports | Components with the same function use the same labels throughout (e.g. status and applicability badges, export buttons). Evidence: code review. |
-| 3.3.3 Error Suggestion | Supports | Error messages say how to fix the problem (e.g. “Paste some documentation text first”). Evidence: code review. |
-| 3.3.4 Error Prevention (Legal, Financial, Data) | Supports | Actions that delete or replace the user's data (start over, load sample, replace an implementation statement) ask for confirmation, and the assessment can be exported and re-imported. Evidence: code review. |
-| 3.3.8 Accessible Authentication (Minimum) | Not Applicable | The product has no authentication. Evidence: code review. |
-| 4.1.3 Status Messages | Supports | Results of actions (answer status, scope changes, analysis results, search result counts, import and export confirmations, errors) are announced through a polite live region without moving focus (scripted check). Evidence: scripted checks status-messages (1 runs, all passed); code review. |
+| 3.3.3 Error Suggestion | Supports | Error messages say how to fix the problem (e.g. “Use at least 15 characters. Four or more unrelated words work well.”, “Paste some documentation text first”). Evidence: code review. |
+| 3.3.4 Error Prevention (Legal, Financial, Data) | Supports | Actions that delete or replace the user's data (erase all data, start a new assessment, load the sample, import, replace an implementation statement) ask for confirmation. Passphrases must be entered twice when created. Assessments can be exported and re-imported. Evidence: code review. |
+| 3.3.8 Accessible Authentication (Minimum) | Supports | Unlocking an encrypted assessment requires a passphrase. Pasting is allowed and the fields declare autocomplete (new-password / current-password), so password managers can supply it; a “Show passphrase” option is provided. No other cognitive function test is used. Evidence: code review. |
+| 4.1.3 Status Messages | Supports | Results of actions (answer status, scope changes, analysis results, search result counts, import, export, lock and unlock confirmations) are announced through a polite live region without moving focus (scripted check). Form error summaries use role=alert. Evidence: scripted checks status-messages (1 runs, all passed); code review. |
 
 ### Table 3: Success Criteria, Level AAA
 
@@ -151,7 +151,7 @@ Not evaluated.
 | 9.2.1.1 Keyboard | Supports | See WCAG 2.1.1. |
 | 9.2.1.2 No Keyboard Trap | Supports | See WCAG 2.1.2. |
 | 9.2.1.4 Character Key Shortcuts | Not Applicable | See WCAG 2.1.4. |
-| 9.2.2.1 Timing Adjustable | Not Applicable | See WCAG 2.2.1. |
+| 9.2.2.1 Timing Adjustable | Supports | See WCAG 2.2.1. |
 | 9.2.2.2 Pause, Stop, Hide | Not Applicable | See WCAG 2.2.2. |
 | 9.2.3.1 Three Flashes or Below Threshold | Supports | See WCAG 2.3.1. |
 | 9.2.4.1 Bypass Blocks | Supports | See WCAG 2.4.1. |
@@ -172,7 +172,7 @@ Not evaluated.
 | 9.1.2.4 Captions (Live) | Not Applicable | See WCAG 1.2.4. |
 | 9.1.2.5 Audio Description (Prerecorded) | Not Applicable | See WCAG 1.2.5. |
 | 9.1.3.4 Orientation | Supports | See WCAG 1.3.4. |
-| 9.1.3.5 Identify Input Purpose | Not Applicable | See WCAG 1.3.5. |
+| 9.1.3.5 Identify Input Purpose | Supports | See WCAG 1.3.5. |
 | 9.1.4.3 Contrast (Minimum) | Supports | See WCAG 1.4.3. |
 | 9.1.4.4 Resize Text | Supports | See WCAG 1.4.4. |
 | 9.1.4.5 Images of Text | Supports | See WCAG 1.4.5. |

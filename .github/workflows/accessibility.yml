@@ -1,7 +1,7 @@
-# Continuous accessibility compliance.
+# Continuous accessibility and security compliance, and GitHub Pages publishing.
 #
 # On every push and pull request:
-#   1. run unit tests
+#   1. run unit tests and the browser security checks (Protected B safeguards)
 #   2. run the accessibility suite (axe-core + scripted WCAG checks) on every page state
 #   3. recompile the VPAT, accessibility statement and test report from the results
 #   4. upload them as the "accessibility-vpat" artifact
@@ -9,8 +9,9 @@
 #   6. fail the workflow if any automated check failed (make this check required in
 #      branch protection to block merging non-conformant changes)
 #
-# Optional: set the repository variable DEPLOY_PAGES=true and set Pages to deploy from
-# "GitHub Actions" to publish the app and its VPAT on GitHub Pages from the default branch.
+#
+# Pushes to the default branch that pass every check are published to GitHub Pages.
+# One-time setup by a repository admin: Settings → Pages → Source: "GitHub Actions".
 
 name: Accessibility (VPAT)
 
@@ -47,8 +48,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Build documentation pages (so they are tested too)
+      - name: Build documentation and policy pages
         run: node scripts/build-vpat.mjs
+
+      - name: Browser security checks (Protected B safeguards)
+        run: npm run test:security
 
       - name: Accessibility test suite
         id: suite
@@ -98,8 +102,9 @@ jobs:
           node scripts/build-vpat.mjs --strict
 
   pages:
+    # Publish only builds that passed every check, and only from the default branch.
     needs: vpat
-    if: vars.DEPLOY_PAGES == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -108,12 +113,23 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      # The branch head, which includes the recompiled VPAT if the vpat job committed one.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.ref_name }}
+
+      - name: Assemble the static site (application, policies, accessibility documentation)
+        run: |
+          mkdir _site
+          cp -r index.html css js policies accessibility LICENSE _site/
+          rm -f _site/policies/*.md
+          touch _site/.nojekyll
+
       - uses: actions/configure-pages@v5
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
+
       - id: deploy
         uses: actions/deploy-pages@v4

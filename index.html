@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- No network connections, no inline code, no remote content: data cannot leave the page. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'self'">
+  <meta name="referrer" content="no-referrer">
   <title>ITSG-33 Compliance Navigator</title>
   <meta name="description" content="Review a software product against ITSG-33 security controls, walk the Gemba for each requirement, and generate a compliance report.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%23b8202f'/><path d='m10 16 4 4 8-8' stroke='white' stroke-width='3' fill='none'/></svg>">
@@ -11,6 +14,7 @@
 <body>
   <a class="skip" href="#app">Skip to content</a>
   <header class="topbar">
+    <p id="marking" class="marking" role="note" aria-label="Security marking"></p>
     <div class="brand">
       <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z" fill="var(--accent)"/><path d="m10 16 4 4 8-8" stroke="#fff" stroke-width="3" fill="none"/></svg>
       <span>ITSG-33 <strong>Compliance Navigator</strong></span>
@@ -22,14 +26,18 @@
       <a href="#/assess" data-nav="assess"><b>3</b> Questionnaire</a>
       <a href="#/report" data-nav="report"><b>4</b> Report</a>
       <a href="#/library" data-nav="library">Gemba library</a>
+      <a href="#/security" data-nav="security">Data &amp; security</a>
     </nav>
+    <button class="btn small" id="lock-btn" type="button" hidden>Lock</button>
     <button class="icon-btn" id="theme-toggle" type="button" aria-label="Dark mode" aria-pressed="false" title="Toggle dark mode"><span aria-hidden="true">◐</span></button>
   </header>
   <main id="app" tabindex="-1"></main>
   <footer class="foot">
     <p>Self-assessment aid based on paraphrased ITSG-33 Annex 3A controls. Not an official Government of Canada or CCCS tool.
-    Your answers are stored only in this browser.</p>
-    <p class="foot-links"><a href="accessibility/index.html">Accessibility statement, VPAT and evidence</a>
+    Open source. Runs entirely in your browser: nothing you enter is sent to any server.</p>
+    <p class="foot-links"><a href="policies/privacy.html">Privacy policy</a>
+      <a href="policies/protected-b.html">Protected B handling</a>
+      <a href="accessibility/index.html">Accessibility statement, VPAT and evidence</a>
       <a href="https://github.com/numbap/Itsg33/issues/new?labels=accessibility&amp;title=Accessibility%3A%20">Report an accessibility problem</a></p>
   </footer>
   <aside id="toast" class="toast" aria-label="Notification" hidden><span id="toast-msg"></span><button type="button" id="toast-close" class="btn small">Dismiss<span class="sr-only"> message</span></button></aside>

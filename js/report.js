@@ -12,7 +12,9 @@ export function esc(s) {
 
 const pct = (x) => `${Math.round(x * 100)}%`;
 
-export function buildReportModel(state) {
+// options.marking: security marking text (e.g. "PROTECTED B") placed on the
+// report, on every printed page and in exported files.
+export function buildReportModel(state, { marking = null } = {}) {
   const results = evaluateAll(state);
   const score = scoreAssessment(state, results);
   const gaps = gapRegister(state, results);
@@ -23,6 +25,7 @@ export function buildReportModel(state) {
   const openQuestions = results.filter((r) => r.openQuestions.length && !["na", "inherited"].includes(r.status));
   return {
     title: `ITSG-33 Compliance Report: ${state.profile.productName || "Unnamed product"}`,
+    marking,
     generated: new Date().toISOString().slice(0, 10),
     profile: state.profile,
     profileRows,
@@ -59,7 +62,7 @@ export function reportToHTML(m) {
       <td class="num">${f.counts.partial + f.counts.planned}</td>
       <td class="num">${f.counts["not-implemented"]}</td>
       <td class="num">${f.counts.unknown + f.counts.unanswered}</td>
-      <td><div class="bar" role="img" aria-label="${pct(f.score)} compliant"><span style="width:${pct(f.score)}"></span></div> ${pct(f.score)}</td>
+      <td><div class="bar" role="img" aria-label="${pct(f.score)} compliant"><span data-pct="${Math.round(f.score * 100)}"></span></div> ${pct(f.score)}</td>
     </tr>`).join("");
 
   const levers = m.levers.length ? m.levers.map((l) => `
@@ -96,8 +99,11 @@ export function reportToHTML(m) {
     <h2>Document review coverage</h2>
     <p>The automated review of supplied product documentation found references relevant to <strong>${m.review.covered}</strong> of ${m.score.overall.total} controls across ${m.review.sentenceCount} sentences. Keyword matches are leads for the assessor, not proof of implementation.</p>` : "";
 
+  const mark = m.marking ? `<p class="report-marking">${esc(m.marking)}</p>` : "";
   return `
   <article class="report">
+    ${m.marking ? `<div class="print-marking print-marking-top" aria-hidden="true">${esc(m.marking)}</div><div class="print-marking print-marking-bottom" aria-hidden="true">${esc(m.marking)}</div>` : ""}
+    ${mark}
     <header class="report-head">
       <h1>${esc(m.title)}</h1>
       <p class="muted">Responsible organization: ${esc(m.profile.org || "—")} · Generated ${m.generated} · Baseline: ITSG-33 PBMM-oriented control set</p>
@@ -148,6 +154,7 @@ export function reportToHTML(m) {
     ${statements}
 
     <h2>Methodology and limitations</h2>
+    ${mark}
     <p class="small">This report is a self-assessment against a PBMM-oriented subset of the ITSG-33 Annex 3A security controls (base controls, without enhancements), using paraphrased control descriptions. Applicability is derived from the system profile; status is derived from questionnaire answers or assessor overrides. Scores weight implemented and inherited controls as 1, partial as 0.5, planned as 0.25 and all others as 0. It does not replace a formal security assessment and authorization (SA&amp;A) by your departmental IT security team. Consult the official ITSG-33 publications from the Canadian Centre for Cyber Security for authoritative control text.</p>
   </article>`;
 }
@@ -159,6 +166,7 @@ const mdCell = (s) => String(s ?? "").replace(/\|/g, "\\|").replace(/\n+/g, " ")
 export function reportToMarkdown(m) {
   const o = m.score.overall;
   const L = [];
+  if (m.marking) L.push(`**${m.marking}**`, "");
   L.push(`# ${m.title}`, "");
   L.push(`Responsible organization: ${m.profile.org || "—"}  `, `Generated: ${m.generated}  `, "Baseline: ITSG-33 PBMM-oriented control set", "");
   L.push("## 1. Executive summary", "");
@@ -220,6 +228,7 @@ export function reportToMarkdown(m) {
 
   L.push("## Methodology and limitations", "",
     "Self-assessment against a PBMM-oriented subset of ITSG-33 Annex 3A base controls using paraphrased descriptions. Implemented and inherited controls score 1, partial 0.5, planned 0.25, others 0. This does not replace a formal SA&A. Consult official CCCS ITSG-33 publications for authoritative control text.", "");
+  if (m.marking) L.push(`**${m.marking}**`, "");
   return L.join("\n");
 }
 
@@ -235,5 +244,6 @@ export function reportToCSV(m) {
     APPLICABILITY[s.applicability.status].label, STATUS[s.status].label, gapRisk[s.control.id] ?? "",
     s.statement.text, s.answer.notes, s.answer.compensating, s.answer.plan, s.answer.target,
   ]);
-  return [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const marked = m.marking ? [[m.marking]] : [];
+  return [...marked, header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
 }
