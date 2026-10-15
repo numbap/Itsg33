@@ -2868,6 +2868,7 @@
         "meta-viewport-large",
         "page-has-heading-one",
         "region",
+        "scrollable-region-focusable",
         "skip-link",
         "tabindex",
         "table-duplicate-name",
