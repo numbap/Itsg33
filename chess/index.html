@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Chess Puzzle Generator</title>
+  <meta name="description" content="Endless checkmate puzzles generated in your browser. Play the solution on the board.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23b58863'/><path d='M0 0h16v16H0zM16 16h16v16H16z' fill='%23f0d9b5'/></svg>">
+  <link rel="stylesheet" href="chess.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <h1>Chess Puzzle Generator</h1>
+      <p class="sub">Every puzzle is generated in your browser and checked by an exhaustive search: exactly one first move forces mate.</p>
+    </header>
+
+    <div class="layout">
+      <section class="board-area" aria-label="Board">
+        <div class="board-frame">
+          <div id="board" class="board" role="group" aria-label="Chessboard. Use arrow keys to move between squares, Enter to pick up or drop a piece."></div>
+          <div id="promo" class="promo" role="dialog" aria-label="Choose promotion piece" hidden></div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <fieldset class="difficulty">
+          <legend>Difficulty</legend>
+          <label><input type="radio" name="mate" value="1"> Mate in 1</label>
+          <label><input type="radio" name="mate" value="2" checked> Mate in 2</label>
+          <label><input type="radio" name="mate" value="3"> Mate in 3</label>
+        </fieldset>
+
+        <button id="new" class="btn primary" type="button">New puzzle</button>
+
+        <div class="status-card">
+          <p id="task" class="task"></p>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="actions">
+          <button id="hint" class="btn" type="button">Hint</button>
+          <button id="solution" class="btn" type="button">Show solution</button>
+          <button id="retry" class="btn" type="button">Retry</button>
+          <button id="flip" class="btn" type="button">Flip board</button>
+        </div>
+
+        <section aria-labelledby="moves-h">
+          <h2 id="moves-h">Moves</h2>
+          <ol id="moves" class="moves"></ol>
+        </section>
+
+        <dl class="stats">
+          <div><dt>Solved</dt><dd id="solved">0</dd></div>
+          <div><dt>Streak</dt><dd id="streak">0</dd></div>
+          <div><dt>Best</dt><dd id="best">0</dd></div>
+        </dl>
+
+        <details class="fen">
+          <summary>Position (FEN) and link</summary>
+          <p><code id="fen"></code></p>
+          <p><a id="permalink" href="#">Link to this puzzle</a></p>
+        </details>
+      </aside>
+    </div>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -97,6 +97,17 @@ The current evaluation is a **self-assessment by an AI assistant**. It has not b
 
 Add an object to the relevant `controls-*.js` file. The tests check that every control has complete Gemba fields, that scope rules use real profile fields and values, and that templates only use the known placeholders (`{product}`, `{org}`, `{idp}`, `{hosting}`, `{classification}`). In `keywords`, a trailing `*` matches a prefix (`throttl*`).
 
+## Chess puzzle generator
+
+`chess/` is a separate, self-contained page: `npm start`, then open http://localhost:8080/chess/. It generates one checkmate puzzle at a time (mate in 1, 2 or 3) and you play the solution on the board, by clicking, dragging or using the keyboard (arrow keys, then Enter).
+
+- **Generation**: random positions with the defending king near an edge, often behind its own pawns. A position becomes a puzzle only if an exhaustive search finds **exactly one** first move that forces mate in N and no faster mate. Half of the puzzles are colour-flipped so Black is the side solving.
+- **Play**: any move that still forces mate in the remaining moves is accepted. The opponent replies with the toughest defence (it delays mate the longest, then leaves the fewest winning replies). A wrong move is refuted and taken back. Hint highlights the piece to move, then its target, and Show solution plays out the line.
+- **Links**: puzzles come from a seeded generator, so `chess/#m2-12345` always rebuilds the same puzzle.
+- **Code**: `chess/engine.js` (rules: legal moves, check and mate, SAN, FEN), `chess/puzzles.js` (solver and generator), `chess/app.js` (UI). `tests/chess.test.mjs` checks move generation against published perft counts and verifies generated puzzles.
+
+The page is not part of the GitHub Pages deployment and stores only solved and streak counts in `localStorage`.
+
 ## Scoring
 
 Implemented and inherited count as 1, partial 0.5, planned 0.25, and everything else 0; not-applicable controls are excluded. Gap risk is the baseline severity weighted by status. Controls that have not been assessed yet score 0 but are listed separately rather than as gaps.
