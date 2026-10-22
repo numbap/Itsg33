@@ -35,7 +35,7 @@
           - /url: remediation-log.html
 - main:
   - heading "Automated test report" [level=1]
-  - paragraph: "Passed: 75 axe-core runs (0 WCAG violations, 0 best-practice issues), 403 of 403 scripted checks passed, 0 JavaScript errors."
+  - paragraph: "Passed: 81 axe-core runs (0 WCAG violations, 0 best-practice issues), 435 of 435 scripted checks passed, 0 JavaScript errors."
   - heading "Tools" [level=2]
   - list:
     - listitem: "axe-core: 4.14.0"
@@ -116,6 +116,20 @@
           - cell "4. Compliance report"
           - cell "/#/report":
             - code: /#/report
+        - row "process Assessment process decision tree, first decision /#/process":
+          - rowheader "process":
+            - code: process
+          - cell "Assessment process decision tree, first decision"
+          - cell "/#/process":
+            - code: /#/process
+        - 'row "process-step Assessment process, activity after one decision, with the whole tree expanded Setup: async (page) => { await page.click(''a.proc-opt[data-choice=\"1\"]''); await page.waitForSelector(\"#proc-node.kind-step\"); await page.click(\".proc-map > summary\"); } /#/process"':
+          - rowheader "process-step":
+            - code: process-step
+          - 'cell "Assessment process, activity after one decision, with the whole tree expanded Setup: async (page) => { await page.click(''a.proc-opt[data-choice=\"1\"]''); await page.waitForSelector(\"#proc-node.kind-step\"); await page.click(\".proc-map > summary\"); }"':
+            - text: "Assessment process, activity after one decision, with the whole tree expanded Setup:"
+            - code: "async (page) => { await page.click('a.proc-opt[data-choice=\"1\"]'); await page.waitForSelector(\"#proc-node.kind-step\"); await page.click(\".proc-map > summary\"); }"
+          - cell "/#/process":
+            - code: /#/process
         - row "security Data and security, unencrypted Unclassified storage /#/security":
           - rowheader "security":
             - code: security
@@ -230,75 +244,75 @@
           - columnheader "Runs"
           - columnheader "Result"
       - rowgroup:
-        - row "keyboard-reach Every focusable control can be reached with Tab 2.1.1 50 All passed":
+        - row "keyboard-reach Every focusable control can be reached with Tab 2.1.1 54 All passed":
           - rowheader "keyboard-reach Every focusable control can be reached with Tab":
             - code: keyboard-reach
             - text: Every focusable control can be reached with Tab
           - cell "2.1.1"
-          - cell "50"
+          - cell "54"
           - cell "All passed"
-        - row "no-keyboard-trap Focus can move through and out of the page 2.1.2 50 All passed":
+        - row "no-keyboard-trap Focus can move through and out of the page 2.1.2 54 All passed":
           - rowheader "no-keyboard-trap Focus can move through and out of the page":
             - code: no-keyboard-trap
             - text: Focus can move through and out of the page
           - cell "2.1.2"
-          - cell "50"
+          - cell "54"
           - cell "All passed"
-        - row "focus-visible Visible focus indicator with at least 3:1 contrast at every stop 2.4.7, 1.4.11 50 All passed":
+        - row "focus-visible Visible focus indicator with at least 3:1 contrast at every stop 2.4.7, 1.4.11 54 All passed":
           - rowheader "focus-visible Visible focus indicator with at least 3:1 contrast at every stop":
             - code: focus-visible
             - text: Visible focus indicator with at least 3:1 contrast at every stop
           - cell "2.4.7, 1.4.11"
-          - cell "50"
+          - cell "54"
           - cell "All passed"
-        - row "focus-not-obscured Focused element is not hidden behind sticky content 2.4.11 50 All passed":
+        - row "focus-not-obscured Focused element is not hidden behind sticky content 2.4.11 54 All passed":
           - rowheader "focus-not-obscured Focused element is not hidden behind sticky content":
             - code: focus-not-obscured
             - text: Focused element is not hidden behind sticky content
           - cell "2.4.11"
-          - cell "50"
+          - cell "54"
           - cell "All passed"
-        - row "non-text-contrast Form field and choice boundaries have at least 3:1 contrast 1.4.11 50 All passed":
+        - row "non-text-contrast Form field and choice boundaries have at least 3:1 contrast 1.4.11 54 All passed":
           - rowheader "non-text-contrast Form field and choice boundaries have at least 3:1 contrast":
             - code: non-text-contrast
             - text: Form field and choice boundaries have at least 3:1 contrast
           - cell "1.4.11"
-          - cell "50"
+          - cell "54"
           - cell "All passed"
-        - row "lookalike-controls Controls that look interactive are keyboard operable 2.1.1, 4.1.2 25 All passed":
+        - row "lookalike-controls Controls that look interactive are keyboard operable 2.1.1, 4.1.2 27 All passed":
           - rowheader "lookalike-controls Controls that look interactive are keyboard operable":
             - code: lookalike-controls
             - text: Controls that look interactive are keyboard operable
           - cell "2.1.1, 4.1.2"
-          - cell "25"
+          - cell "27"
           - cell "All passed"
-        - row "target-size Pointer targets are at least 24 by 24 CSS px 2.5.8 25 All passed":
+        - row "target-size Pointer targets are at least 24 by 24 CSS px 2.5.8 27 All passed":
           - rowheader "target-size Pointer targets are at least 24 by 24 CSS px":
             - code: target-size
             - text: Pointer targets are at least 24 by 24 CSS px
           - cell "2.5.8"
-          - cell "25"
+          - cell "27"
           - cell "All passed"
-        - row "reflow-320 No horizontal scrolling at 320 CSS px (400% zoom) 1.4.10 25 All passed":
+        - row "reflow-320 No horizontal scrolling at 320 CSS px (400% zoom) 1.4.10 27 All passed":
           - rowheader "reflow-320 No horizontal scrolling at 320 CSS px (400% zoom)":
             - code: reflow-320
             - text: No horizontal scrolling at 320 CSS px (400% zoom)
           - cell "1.4.10"
-          - cell "25"
+          - cell "27"
           - cell "All passed"
-        - row "reflow-640 No loss of content at 640 CSS px (200% zoom) 1.4.4 25 All passed":
+        - row "reflow-640 No loss of content at 640 CSS px (200% zoom) 1.4.4 27 All passed":
           - rowheader "reflow-640 No loss of content at 640 CSS px (200% zoom)":
             - code: reflow-640
             - text: No loss of content at 640 CSS px (200% zoom)
           - cell "1.4.4"
-          - cell "25"
+          - cell "27"
           - cell "All passed"
-        - row "text-spacing No clipped content with WCAG text-spacing overrides 1.4.12 50 All passed":
+        - row "text-spacing No clipped content with WCAG text-spacing overrides 1.4.12 54 All passed":
           - rowheader "text-spacing No clipped content with WCAG text-spacing overrides":
             - code: text-spacing
             - text: No clipped content with WCAG text-spacing overrides
           - cell "1.4.12"
-          - cell "50"
+          - cell "54"
           - cell "All passed"
         - row "route-focus Navigation moves focus to the new page heading and updates title 2.4.3, 2.4.2, 4.1.2 1 All passed":
           - rowheader "route-focus Navigation moves focus to the new page heading and updates title":
@@ -328,10 +342,10 @@
   - list:
     - listitem:
       - code: color-contrast
-      - text: "(Elements must meet minimum color contrast ratio thresholds): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px, security/light, security/dark, security/light 320px, setup/light, setup/dark, setup/light 320px, setup-error/light, setup-error/dark, setup-error/light 320px, locked/light, locked/dark, locked/light 320px, pb-home/light, pb-home/dark, pb-home/light 320px, security-encrypted/light, security-encrypted/dark, security-encrypted/light 320px, docs/methodology/light 320px"
+      - text: "(Elements must meet minimum color contrast ratio thresholds): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px, process/light, process/dark, process/light 320px, process-step/light, process-step/dark, process-step/light 320px, security/light, security/dark, security/light 320px, setup/light, setup/dark, setup/light 320px, setup-error/light, setup-error/dark, setup-error/light 320px, locked/light, locked/dark, locked/light 320px, pb-home/light, pb-home/dark, pb-home/light 320px, security-encrypted/light, security-encrypted/dark, security-encrypted/light 320px, docs/methodology/light 320px"
     - listitem:
       - code: label-content-name-mismatch
-      - text: "(Elements must have their visible text as part of their accessible name): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px, security/light, security/dark, security/light 320px, setup/light, setup/dark, setup/light 320px, setup-error/light, setup-error/dark, setup-error/light 320px, locked/light, locked/dark, locked/light 320px, pb-home/light, pb-home/dark, pb-home/light 320px, security-encrypted/light, security-encrypted/dark, security-encrypted/light 320px"
+      - text: "(Elements must have their visible text as part of their accessible name): home/light, home/dark, home/light 320px, profile/light, profile/dark, profile/light 320px, review/light, review/dark, review/light 320px, review-toast/light, review-toast/dark, review-toast/light 320px, assess/light, assess/dark, assess/light 320px, assess-pe/light, assess-pe/dark, assess-pe/light 320px, control/light, control/dark, control/light 320px, library/light, library/dark, library/light 320px, report/light, report/dark, report/light 320px, process/light, process/dark, process/light 320px, process-step/light, process-step/dark, process-step/light 320px, security/light, security/dark, security/light 320px, setup/light, setup/dark, setup/light 320px, setup-error/light, setup-error/dark, setup-error/light 320px, locked/light, locked/dark, locked/light 320px, pb-home/light, pb-home/dark, pb-home/light 320px, security-encrypted/light, security-encrypted/dark, security-encrypted/light 320px"
   - heading "axe-core rules applied, by success criterion" [level=2]
   - region "axe-core rules by WCAG success criterion":
     - table "axe-core rules by WCAG success criterion":
@@ -464,6 +478,12 @@
     - listitem:
       - link "4. Compliance report":
         - /url: results/aria/report.yml
+    - listitem:
+      - link "Assessment process decision tree, first decision":
+        - /url: results/aria/process.yml
+    - listitem:
+      - link "Assessment process, activity after one decision, with the whole tree expanded":
+        - /url: results/aria/process-step.yml
     - listitem:
       - link "Data and security, unencrypted Unclassified storage":
         - /url: results/aria/security.yml
