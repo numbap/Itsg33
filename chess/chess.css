@@ -37,7 +37,10 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 var(--font); }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+.wrap {
+  max-width: 1040px; margin: 0 auto; padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
 .head h1 { margin: 0; font-size: 1.6rem; letter-spacing: -.01em; }
 .sub { margin: 4px 0 20px; color: var(--muted); max-width: 60ch; }
 
