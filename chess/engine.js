@@ -91,7 +91,8 @@ export class Position {
     return this.kings[color] >= 0 && this.attacked(this.kings[color], other(color));
   }
 
-  pseudoMoves() {
+  // All pseudo-legal moves, or only captures and promotions (for quiescence search).
+  pseudoMoves(tactical = false) {
     const b = this.board, us = this.turn, them = other(us), moves = [];
     const add = (from, to, piece, flag = "n", promo = null) =>
       moves.push({ from, to, piece, captured: flag === "e" ? (us === "w" ? "p" : "P") : b[to], promo, flag });
@@ -107,7 +108,7 @@ export class Position {
           if (r === lastRank) for (const promo of "qrbn") add(s, to, p, flag, us === "w" ? promo.toUpperCase() : promo);
           else add(s, to, p, flag);
         };
-        if (!b[s + dir]) {
+        if (!b[s + dir] && (!tactical || r === lastRank)) {
           pawnTo(s + dir, "n");
           if (r === startRank && !b[s + 2 * dir]) add(s, s + 2 * dir, p, "d");
         }
@@ -118,11 +119,11 @@ export class Position {
           else if (t === this.ep) add(s, t, p, "e");
         }
       } else if (type === "n" || type === "k") {
-        for (const t of (type === "n" ? KNIGHT_TO : KING_TO)[s]) if (!b[t] || enemy(t)) add(s, t, p);
+        for (const t of (type === "n" ? KNIGHT_TO : KING_TO)[s]) if (enemy(t) || (!tactical && !b[t])) add(s, t, p);
       } else {
         const sets = type === "r" ? [ROOK_RAYS] : type === "b" ? [BISHOP_RAYS] : [ROOK_RAYS, BISHOP_RAYS];
         for (const set of sets) for (const ray of set[s]) for (const t of ray) {
-          if (!b[t]) { add(s, t, p); continue; }
+          if (!b[t]) { if (!tactical) add(s, t, p); continue; }
           if (enemy(t)) add(s, t, p);
           break;
         }
@@ -130,7 +131,7 @@ export class Position {
     }
     // Castling: king and rook on their home squares, path empty, king not passing through check.
     const home = us === "w" ? 4 : 60, K = us === "w" ? "K" : "k", Rk = us === "w" ? "R" : "r";
-    if (b[home] === K && this.castling) {
+    if (!tactical && b[home] === K && this.castling) {
       const [kRight, qRight] = us === "w" ? ["K", "Q"] : ["k", "q"];
       if (this.castling.includes(kRight) && b[home + 3] === Rk && !b[home + 1] && !b[home + 2] &&
           !this.attacked(home, them) && !this.attacked(home + 1, them) && !this.attacked(home + 2, them)) {

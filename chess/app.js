@@ -1,33 +1,51 @@
 // Puzzle UI: renders the board, takes moves by click, drag or keyboard, and
-// answers with the toughest defence until the puzzle is solved.
+// plays the opponent until the puzzle is solved.
 
-import { Position, sqName, colorOf } from "./engine.js";
+import { Position, sqName, colorOf, sameMove } from "./engine.js";
 import { generatePuzzle, rng, defenderLoses, bestDefence, winningMoves, solutionLine } from "./puzzles.js";
+import { SETTINGS, judgeMove, gainBanked, reply, fromUci } from "./tactics.js";
+import { evaluate, bestMove } from "./search.js";
+import { TRAPS, trapLine } from "./traps.js";
+import { BANK } from "./bank.js";
 
 const GLYPH = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
 const NAME = { k: "king", q: "queen", r: "rook", b: "bishop", n: "knight", p: "pawn" };
 const COLOUR = { w: "White", b: "Black" };
-const BUDGET = { 1: 40, 2: 15, 3: 2 }; // positions tried per animation frame
+const TYPES = {
+  m: { levels: ["Mate in 1", "Mate in 2", "Mate in 3"] },
+  w: { kind: "win", levels: ["Easy", "Medium", "Hard"] },
+  b: { kind: "best", levels: ["Easy", "Medium", "Hard"] },
+  t: { levels: ["Opening traps", "Poisoned bait"] },
+};
+const THEME_HINT = {
+  Fork: "look for a fork", Pin: "look for a pin", Skewer: "look for a skewer",
+  "Discovered attack": "look for a discovered attack", Sacrifice: "a sacrifice works here", Check: "start with a check",
+};
+const BUDGET = { 1: 40, 2: 15, 3: 2 }; // mate positions tried per animation frame
 const STATS_KEY = "chess-puzzles-stats";
 const $ = (id) => document.getElementById(id);
 
 const state = {
-  puzzle: null,      // { fen, mateIn, seed }
+  puzzle: null,      // see load(): type, level, id, fen, line, ...
   pos: null,
   solver: "w",
-  left: 0,           // solver moves still needed to mate
-  phase: "idle",     // loading | play | opponent | wrong | solved | shown
+  base: 0,           // material balance at the start, solver's view (tactics)
+  left: 0,           // mate puzzles: solver moves still needed to mate
+  ply: 0,            // moves played since the puzzle started
+  offLine: false,    // the solver chose a different but equally good move
+  phase: "idle",     // loading | intro | play | thinking | opponent | wrong | solved | shown | promoting
   selected: -1,
   targets: [],
   hint: [],
   hintLevel: 0,
   clean: true,       // no mistakes, hints or solution on this puzzle
   counted: false,    // this puzzle already added to the solved count
-  moves: [],         // { san, mine }
+  moves: [],         // { san, by: "me" | "opp" | "intro" }
   flipped: false,
   focus: 0,
   gen: 0,
   timers: [],
+  decks: {},
   stats: loadStats(),
 };
 
@@ -107,6 +125,14 @@ function coord(kind, text) {
   return c;
 }
 
+function taskText(p) {
+  const c = COLOUR[state.solver];
+  if (p.type === "m") return `${c} to move: mate in ${p.level}`;
+  if (p.type === "w") return `${c} to move: win material`;
+  if (p.type === "b") return `${c} to move: find the best move`;
+  return p.trap ? `${c} to move: ${p.trap.name}` : `${c} to move: avoid the bait`;
+}
+
 function renderPanel() {
   const { puzzle, phase } = state;
   const task = $("task");
@@ -115,37 +141,37 @@ function renderPanel() {
     const dot = document.createElement("span");
     dot.className = `turn-dot ${state.solver}`;
     dot.setAttribute("aria-hidden", "true");
-    task.append(dot, `${COLOUR[state.solver]} to move: mate in ${puzzle.mateIn}`);
-  } else task.textContent = "Generating puzzle…";
+    task.append(dot, taskText(puzzle));
+  } else task.textContent = "Preparing a puzzle…";
 
   const list = $("moves");
   list.replaceChildren();
-  // Number full moves; when Black solves, the first move is shown as "1… move".
-  const tokens = state.solver === "b" && state.moves.length ? [{ san: "…", mine: false }, ...state.moves] : state.moves;
+  // Number full moves; a list that starts with a Black move opens with "1… move".
+  const tokens = state.solver === "b" && !puzzle?.trap && state.moves.length ? [{ san: "…", by: "opp" }, ...state.moves] : state.moves;
   for (let i = 0; i < tokens.length; i += 2) {
     const li = document.createElement("li");
-    for (const mv of tokens.slice(i, i + 2)) li.append(cell(mv.san, mv.mine));
+    for (const mv of tokens.slice(i, i + 2)) li.append(cell(mv));
     list.append(li);
   }
 
   const playing = phase === "play";
   $("hint").disabled = !playing;
   $("solution").disabled = !(playing || phase === "wrong");
-  $("retry").disabled = !puzzle || phase === "loading";
+  $("retry").disabled = !puzzle || ["loading", "intro", "thinking", "promoting"].includes(phase);
   $("flip").disabled = !puzzle;
   $("solved").textContent = state.stats.solved;
   $("streak").textContent = state.stats.streak;
   $("best").textContent = state.stats.best;
   if (puzzle) {
     $("fen").textContent = puzzle.fen;
-    $("permalink").href = `#m${puzzle.mateIn}-${puzzle.seed}`;
+    $("permalink").href = hashOf(puzzle);
   }
 }
 
-function cell(text, mine) {
+function cell(mv) {
   const span = document.createElement("span");
-  span.className = "m" + (mine ? "" : " opp");
-  span.textContent = text;
+  span.className = "m" + (mv.by === "me" ? "" : ` ${mv.by}`);
+  span.textContent = mv.san;
   return span;
 }
 
@@ -156,44 +182,127 @@ function setStatus(text, tone = "") {
   st.parentElement.className = "status-card " + tone;
 }
 
-// --- Puzzle flow ---------------------------------------------------------------
+function setIdea(text) {
+  $("idea").textContent = text || "";
+  $("idea").hidden = !text;
+}
+
+// --- Loading puzzles -------------------------------------------------------------
 
 const later = (fn, ms) => state.timers.push(setTimeout(fn, ms));
 function clearTimers() { state.timers.forEach(clearTimeout); state.timers = []; }
-
 function clearSelection() { state.selected = -1; state.targets = []; }
 
-async function newPuzzle(mateIn, seed = Math.floor(Math.random() * 2 ** 31)) {
+const hashOf = (p) => `#${p.type}${p.level}-${p.id}`;
+const bankKey = (type, level) => (type === "t" ? "bait1" : `${TYPES[type].kind}${level}`);
+const poolSize = (type, level) => (type === "t" && level === 1 ? TRAPS.length : BANK[bankKey(type, level)]?.length ?? 0);
+
+// Bank puzzles are dealt from a shuffled deck so they do not repeat until all have been seen.
+function nextId(type, level) {
+  if (type === "m") return Math.floor(Math.random() * 2 ** 31);
+  const key = type + level;
+  if (!state.decks[key]?.length) {
+    const deck = [...Array(poolSize(type, level)).keys()];
+    for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+    state.decks[key] = deck;
+  }
+  return state.decks[key].pop();
+}
+
+// Replays UCI moves from fen and returns them as move objects.
+function uciLine(fen, ucis) {
+  const pos = new Position(fen), line = [];
+  for (const u of ucis) {
+    const m = fromUci(pos, u);
+    if (!m) break;
+    line.push(m);
+    pos.make(m);
+  }
+  return line;
+}
+
+async function load(type, level, id = nextId(type, level)) {
   const token = ++state.gen;
   clearTimers();
   clearSelection();
   Object.assign(state, { puzzle: null, pos: null, phase: "loading", moves: [], hint: [], clean: true, counted: false });
-  setStatus(`Searching for a mate in ${mateIn}…`);
-  render();
-  const random = rng(seed);
-  let found = null;
-  while (!found) {
-    found = generatePuzzle(mateIn, random, BUDGET[mateIn]);
-    // Yield so the page stays responsive; give up if a newer request started.
-    if (!found) await new Promise((r) => requestAnimationFrame(() => r()));
-    if (token !== state.gen) return;
+  setIdea("");
+  let puzzle;
+  if (type === "m") {
+    setStatus(`Searching for a mate in ${level}…`);
+    render();
+    const random = rng(id);
+    let found = null;
+    while (!found) {
+      found = generatePuzzle(level, random, BUDGET[level]);
+      // Yield so the page stays responsive; give up if a newer request started.
+      if (!found) await new Promise((r) => requestAnimationFrame(() => r()));
+      if (token !== state.gen) return;
+    }
+    puzzle = { type, level, id, fen: found.fen };
+  } else if (type === "t" && level === 1) {
+    const trap = TRAPS[id % TRAPS.length];
+    const full = trapLine(trap), pos = new Position();
+    full.slice(0, trap.start).forEach((m) => pos.make(m));
+    puzzle = { type, level, id, trap, fen: pos.fen(), intro: full.slice(0, trap.start), line: full.slice(trap.start) };
+  } else {
+    const list = BANK[bankKey(type, level)];
+    const [fen, ucis, theme, baitUci] = list[id % list.length];
+    const kind = type === "t" ? "bait" : TYPES[type].kind;
+    const start = new Position(fen);
+    const bait = baitUci ? fromUci(start, baitUci) : null;
+    puzzle = {
+      type, level, id, fen, kind, engineLevel: type === "t" ? 1 : level, theme,
+      line: uciLine(fen, ucis.split(" ")), bait, baitSan: bait ? start.san(bait) : "",
+    };
   }
-  state.puzzle = { ...found, seed };
-  const hash = `#m${mateIn}-${seed}`;
-  if (location.hash !== hash) history.replaceState(null, "", hash);
-  start();
+  state.puzzle = puzzle;
+  if (location.hash !== hashOf(puzzle)) history.replaceState(null, "", hashOf(puzzle));
+  start(true);
 }
 
-function start() {
+// (Re)start the current puzzle. Opening traps replay their opening first.
+function start(animate = false) {
   clearTimers();
   clearSelection();
-  const pos = new Position(state.puzzle.fen);
-  Object.assign(state, {
-    pos, solver: pos.turn, left: state.puzzle.mateIn, phase: "play", moves: [], hint: [], hintLevel: 0,
-  });
-  setStatus("Find the move that forces mate.");
+  const p = state.puzzle;
+  state.solver = new Position(p.fen).turn;
+  Object.assign(state, { ply: 0, offLine: false, left: p.type === "m" ? p.level : 0, moves: [], hint: [], hintLevel: 0 });
+  if (state.phase === "solved" || state.phase === "shown") state.clean = false;
+  setIdea("");
+  if (p.intro) {
+    state.pos = new Position();
+    const step = (m) => {
+      const san = state.pos.san(m);
+      state.pos.make(m);
+      state.moves.push({ san, by: "intro" });
+    };
+    if (animate) {
+      state.phase = "intro";
+      setStatus(`${p.trap.opening}…`);
+      render();
+      p.intro.forEach((m, i) => later(() => { step(m); render(); }, 250 + i * 320));
+      later(begin, 250 + p.intro.length * 320 + 150);
+      return;
+    }
+    p.intro.forEach(step);
+  } else state.pos = new Position(p.fen);
+  begin();
+}
+
+function begin() {
+  const p = state.puzzle;
+  state.base = evaluate(state.pos);
+  state.phase = "play";
+  if (p.type === "m") setStatus("Find the move that forces mate.");
+  else if (p.type === "w") setStatus("Find the move that wins material.");
+  else if (p.type === "b") setStatus("Your opponent threatens something. Find the only move that holds.");
+  else if (p.trap) setStatus(`${COLOUR[state.solver === "w" ? "b" : "w"]} just played ${state.moves.at(-1).san}. Punish it.`);
+  else setStatus("A piece looks free, but one capture here is poisoned. Find the best move.");
   render();
 }
+
+// --- Moves ---------------------------------------------------------------------
 
 function legal() { return state.phase === "play" ? state.pos.legalMoves() : []; }
 
@@ -211,59 +320,126 @@ function attempt(from, to) {
 }
 
 function play(m) {
-  const { pos } = state;
   clearSelection();
   state.hint = [];
-  const san = pos.san(m);
-  pos.make(m);
-  state.moves.push({ san, mine: true });
-  state.focus = m.to;
+  const san = state.pos.san(m);
+  if (state.puzzle.type === "m") playMate(m, san);
+  else playLine(m, san);
+}
 
+function playMate(m, san) {
+  const { pos } = state;
+  pos.make(m);
+  state.moves.push({ san, by: "me" });
+  state.focus = m.to;
   if (pos.isCheckmate()) return solved();
   if (state.left > 1 && defenderLoses(pos, state.left)) {
     state.left--;
     state.phase = "opponent";
     setStatus(`${san} is right. Waiting for the reply…`, "ok");
     render();
-    later(reply, 550);
+    later(() => {
+      const r = bestDefence(pos, state.left + 1);
+      opponentMoves(r, state.left === 1 ? "Mate in 1 now." : `Mate in ${state.left} to go.`);
+    }, 550);
     return;
   }
-  wrong(san);
+  wrong(m, san, false);
 }
 
-function reply() {
+// Tactics and traps: follow the stored line; a different move is checked by search.
+function playLine(m, san) {
+  const p = state.puzzle, { pos } = state;
+  const expected = state.offLine ? null : p.line[state.ply];
+  if (expected && sameMove(m, expected)) return accept(m, san);
+  pos.make(m);
+  const mate = pos.isCheckmate();
+  pos.undo();
+  if (mate) return accept(m, san);
+  if (p.trap) { pos.make(m); state.moves.push({ san, by: "me" }); return wrong(m, san, false); }
+  state.phase = "thinking";
+  setStatus(`Checking ${san}…`);
+  render();
+  later(() => {
+    const { ok } = judgeMove(pos, m, p.kind, p.engineLevel, state.base);
+    if (ok) { state.offLine = true; accept(m, san); return; }
+    pos.make(m);
+    state.moves.push({ san, by: "me" });
+    wrong(m, san, true);
+  }, 30);
+}
+
+function accept(m, san) {
+  const p = state.puzzle, { pos } = state;
+  pos.make(m);
+  state.moves.push({ san, by: "me" });
+  state.ply++;
+  state.focus = m.to;
+  const oneMove = p.type === "b" || (p.type === "t" && !p.trap);
+  if (pos.isCheckmate() || oneMove) return solved();
+  if (p.type === "w" && (gainBanked(pos, state.base) || state.ply >= 9)) return solved();
+  if (p.trap && state.ply >= p.line.length) return solved();
+  if (!pos.hasLegalMove()) return solved();
+  state.phase = "opponent";
+  setStatus(`${san} is right. Waiting for the reply…`, "ok");
+  render();
+  later(() => {
+    let r = state.offLine ? null : p.line[state.ply];
+    if (!r || !pos.legalMoves().some((x) => sameMove(x, r))) {
+      r = reply(pos, p.kind, p.engineLevel);
+      state.offLine = true;
+    }
+    state.ply++;
+    opponentMoves(r, "Keep going.");
+  }, 550);
+}
+
+function opponentMoves(r, next) {
   const { pos } = state;
-  const r = bestDefence(pos, state.left + 1);
   const san = pos.san(r);
   pos.make(r);
-  state.moves.push({ san, mine: false });
+  state.moves.push({ san, by: "opp" });
   state.phase = "play";
   state.hintLevel = 0;
-  setStatus(`${COLOUR[colorOf(r.piece)]} played ${san}. ${state.left === 1 ? "Mate in 1 now." : `Mate in ${state.left} to go.`}`);
+  setStatus(`${COLOUR[colorOf(r.piece)]} played ${san}. ${next}`);
   render();
 }
 
-function wrong(san) {
-  const { pos } = state;
-  const why = pos.isStalemate() ? "is stalemate" : "doesn't force mate";
+// The wrong move is on the board. Optionally show the refutation, then take it all back.
+function wrong(m, san, refute) {
+  const p = state.puzzle, { pos } = state;
+  const isBait = p.bait && sameMove(m, p.bait);
+  const why = pos.isStalemate() ? `${san} is stalemate.` : isBait ? `${san} takes the bait.` :
+    p.type === "m" ? `${san} doesn't force mate.` : p.trap ? `${san} lets the opponent off the hook.` : `${san} isn't the best move.`;
   state.phase = "wrong";
   breakStreak();
-  setStatus(`${san} ${why}. Try again.`, "bad");
+  setStatus(`${why} Try again.`, "bad");
   board.classList.remove("wrong");
   void board.offsetWidth; // restart the shake animation
   board.classList.add("wrong");
   render();
-  later(() => {
-    pos.undo();
-    state.moves.pop();
-    state.phase = "play";
-    render();
-  }, 1000);
+  if (refute && pos.hasLegalMove()) {
+    later(() => {
+      const r = reply(pos, p.kind, p.engineLevel);
+      const rsan = pos.san(r);
+      pos.make(r);
+      state.moves.push({ san: rsan, by: "opp" });
+      setStatus(`${why} ${COLOUR[colorOf(r.piece)]} answers ${rsan}. Try again.`, "bad");
+      render();
+      later(() => takeBack(2), 1900);
+    }, 500);
+  } else later(() => takeBack(1), 1000);
+}
+
+function takeBack(n) {
+  for (let i = 0; i < n; i++) { state.pos.undo(); state.moves.pop(); }
+  state.phase = "play";
+  render();
 }
 
 function solved() {
+  const p = state.puzzle, { stats } = state;
   state.phase = "solved";
-  const { stats } = state;
   if (!state.counted) stats.solved++;
   if (state.clean && !state.counted) {
     stats.streak++;
@@ -271,8 +447,18 @@ function solved() {
   }
   state.counted = true;
   saveStats();
-  setStatus(state.clean ? "Checkmate! Solved." : "Checkmate! Solved, with help along the way.", "ok");
+  const mate = state.pos.isCheckmate();
+  const head = mate ? "Checkmate!" : p.type === "w" ? "Material won!" : p.trap ? "Trap sprung!" : "Best move!";
+  setStatus(state.clean ? `${head} Solved.` : `${head} Solved, with help along the way.`, "ok");
+  explain();
   render();
+}
+
+function explain() {
+  const p = state.puzzle;
+  if (p.trap) setIdea(`${p.trap.name} (${p.trap.opening}). ${p.trap.idea}`);
+  else if (p.bait) setIdea(`The bait was ${p.baitSan}: the piece looked free, but taking it loses. Theme of the right move: ${p.theme}.`);
+  else if (p.theme) setIdea(`Theme: ${p.theme}.`);
 }
 
 function breakStreak() {
@@ -283,36 +469,43 @@ function breakStreak() {
 
 function hint() {
   if (state.phase !== "play") return;
-  const [m] = winningMoves(state.pos, state.left, 1);
+  const p = state.puzzle, { pos } = state;
+  let m;
+  if (p.type === "m") [m] = winningMoves(pos, state.left, 1);
+  else if (!state.offLine) m = p.line[state.ply];
+  else m = bestMove(pos, SETTINGS[p.kind][p.engineLevel].depth).move;
   if (!m) return;
   breakStreak();
-  state.hintLevel = Math.min(state.hintLevel + 1, 2);
-  state.hint = state.hintLevel === 1 ? [m.from] : [m.from, m.to];
-  const p = state.pos.board[m.from];
-  setStatus(state.hintLevel === 1
-    ? `Hint: move the ${NAME[p.toLowerCase()]} on ${sqName(m.from)}.`
-    : `Hint: ${NAME[p.toLowerCase()]} from ${sqName(m.from)} to ${sqName(m.to)}.`);
+  // Tactics get the idea first, then the piece, then the move.
+  const themeHint = state.ply === 0 && THEME_HINT[p.theme];
+  const steps = themeHint ? 3 : 2;
+  state.hintLevel = Math.min(state.hintLevel + 1, steps);
+  const level = state.hintLevel - (steps - 2);
+  const piece = NAME[pos.board[m.from].toLowerCase()];
+  if (level <= 0) { state.hint = []; setStatus(`Hint: ${themeHint}.`); }
+  else if (level === 1) { state.hint = [m.from]; setStatus(`Hint: move the ${piece} on ${sqName(m.from)}.`); }
+  else { state.hint = [m.from, m.to]; setStatus(`Hint: ${piece} from ${sqName(m.from)} to ${sqName(m.to)}.`); }
   render();
 }
 
+// Restart the puzzle and play the main line move by move.
 function showSolution() {
-  if (state.phase === "wrong") {
-    clearTimers();
-    state.pos.undo();
-    state.moves.pop();
-  } else if (state.phase !== "play") return;
+  if (state.phase !== "play" && state.phase !== "wrong") return;
+  const p = state.puzzle;
   breakStreak();
-  clearSelection();
-  state.hint = [];
+  start(false);
   state.phase = "shown";
-  const line = solutionLine(state.pos.fen(), state.left);
+  const line = p.type === "m" ? solutionLine(p.fen, p.level) : p.line;
   setStatus("Solution:");
   render();
   line.forEach((m, i) => later(() => {
     const san = state.pos.san(m);
     state.pos.make(m);
-    state.moves.push({ san, mine: i % 2 === 0 });
-    setStatus(i === line.length - 1 ? "Solution shown. Press Retry to play it yourself, or New puzzle." : "Solution:");
+    state.moves.push({ san, by: i % 2 === 0 ? "me" : "opp" });
+    if (i === line.length - 1) {
+      setStatus("Solution shown. Press Retry to play it yourself, or New puzzle.");
+      explain();
+    }
     render();
   }, 300 + i * 750));
 }
@@ -435,21 +628,42 @@ board.addEventListener("focusin", (e) => {
 
 // --- Controls ----------------------------------------------------------------
 
-const mateIn = () => Number(document.querySelector('input[name="mate"]:checked').value);
-$("new").addEventListener("click", () => newPuzzle(mateIn()));
-document.querySelectorAll('input[name="mate"]').forEach((r) => r.addEventListener("change", () => newPuzzle(mateIn())));
+const chosen = (name) => document.querySelector(`input[name="${name}"]:checked`).value;
+const levelInputs = [...document.querySelectorAll('input[name="level"]')];
+
+// Relabel the level choices for the selected puzzle type.
+function showLevels(type, level) {
+  const labels = TYPES[type].levels;
+  levelInputs.forEach((input, i) => {
+    input.parentElement.hidden = i >= labels.length;
+    input.nextElementSibling.textContent = labels[i] ?? "";
+    input.checked = i + 1 === level;
+  });
+}
+
+function newFromControls() { load(chosen("type"), Number(chosen("level"))); }
+
+document.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener("change", () => {
+  showLevels(r.value, r.value === "m" ? 2 : 1);
+  newFromControls();
+}));
+levelInputs.forEach((r) => r.addEventListener("change", newFromControls));
+$("new").addEventListener("click", newFromControls);
 $("hint").addEventListener("click", hint);
 $("solution").addEventListener("click", showSolution);
-$("retry").addEventListener("click", () => { if (state.puzzle) start(); });
+$("retry").addEventListener("click", () => { if (state.puzzle) start(false); });
 $("flip").addEventListener("click", () => { state.flipped = !state.flipped; render(); });
 
 function fromHash() {
-  const m = /^#m([123])-(\d{1,10})$/.exec(location.hash);
+  const m = /^#([mwbt])([123])-(\d{1,10})$/.exec(location.hash);
   if (!m) return false;
-  if (state.puzzle && `#m${state.puzzle.mateIn}-${state.puzzle.seed}` === location.hash) return true;
-  document.querySelector(`input[name="mate"][value="${m[1]}"]`).checked = true;
-  newPuzzle(Number(m[1]), Number(m[2]));
+  const [, type, lv, id] = m, level = Number(lv);
+  if (level > TYPES[type].levels.length) return false;
+  if (state.puzzle && hashOf(state.puzzle) === location.hash) return true;
+  document.querySelector(`input[name="type"][value="${type}"]`).checked = true;
+  showLevels(type, level);
+  load(type, level, Number(id));
   return true;
 }
 window.addEventListener("hashchange", fromHash);
-if (!fromHash()) newPuzzle(mateIn());
+if (!fromHash()) { showLevels("m", 2); newFromControls(); }

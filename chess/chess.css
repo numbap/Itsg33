@@ -19,19 +19,20 @@
   --hint: rgb(30 170 90 / .55);
   --check: radial-gradient(circle, rgb(230 20 20 / .9) 0%, rgb(230 20 20 / .5) 45%, transparent 75%);
   --dot: rgb(0 0 0 / .22);
+  --chip: #e8e4da;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #141517; --surface: #1d1f22; --text: #ececec; --muted: #a3a8ad; --border: #34383d;
-    --accent: #7db4ea; --accent-ink: #0d1b29; --ok: #5cc98a; --ok-soft: #173325; --bad: #f1786f; --bad-soft: #3d1c1a;
+    --accent: #7db4ea; --accent-ink: #0d1b29; --ok: #5cc98a; --ok-soft: #173325; --bad: #f1786f; --bad-soft: #3d1c1a; --chip: #2e3236;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #141517; --surface: #1d1f22; --text: #ececec; --muted: #a3a8ad; --border: #34383d;
-  --accent: #7db4ea; --accent-ink: #0d1b29; --ok: #5cc98a; --ok-soft: #173325; --bad: #f1786f; --bad-soft: #3d1c1a;
+  --accent: #7db4ea; --accent-ink: #0d1b29; --ok: #5cc98a; --ok-soft: #173325; --bad: #f1786f; --bad-soft: #3d1c1a; --chip: #2e3236;
   color-scheme: dark;
 }
 
@@ -98,9 +99,9 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 var(
 
 /* Panel */
 .panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.difficulty { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px 10px; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; background: var(--surface); }
-.difficulty legend { padding: 0 4px; font-size: .85rem; color: var(--muted); }
-.difficulty label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.choice { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px 10px; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; background: var(--surface); }
+.choice legend { padding: 0 4px; font-size: .85rem; color: var(--muted); }
+.choice label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 .btn {
   font: inherit; font-weight: 600; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text); cursor: pointer;
@@ -121,6 +122,9 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 var(
 .status.bad { color: var(--bad); font-weight: 600; }
 .status-card.ok { background: var(--ok-soft); border-color: var(--ok); }
 .status-card.bad { background: var(--bad-soft); }
+.status-card .theme { display: inline-block; margin-top: 6px; padding: 1px 8px; border-radius: 999px; font-size: .8rem; font-weight: 600; background: var(--chip); color: var(--text); }
+.idea { margin: 6px 0 0; font-size: .92rem; }
+.moves .m.intro { font-weight: 400; color: var(--muted); }
 
 h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; }
 .moves { margin: 0; padding: 0 0 0 2.2em; min-height: 1.5em; font-variant-numeric: tabular-nums; }
@@ -136,3 +140,4 @@ h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color:
 .fen summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .fen code { font-size: .8rem; word-break: break-all; }
 .fen a { color: var(--accent); }
+.choice label[hidden] { display: none; }

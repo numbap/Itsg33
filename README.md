@@ -99,12 +99,22 @@ Add an object to the relevant `controls-*.js` file. The tests check that every c
 
 ## Chess puzzle generator
 
-`chess/` is a separate, self-contained page: `npm start`, then open http://localhost:8080/chess/. It generates one checkmate puzzle at a time (mate in 1, 2 or 3) and you play the solution on the board, by clicking, dragging or using the keyboard (arrow keys, then Enter).
+`chess/` is a separate, self-contained page: `npm start`, then open http://localhost:8080/chess/. It serves one puzzle at a time and you play the answer on the board, by clicking, dragging or using the keyboard (arrow keys, then Enter).
 
-- **Generation**: random positions with the defending king near an edge, often behind its own pawns. A position becomes a puzzle only if an exhaustive search finds **exactly one** first move that forces mate in N and no faster mate. Half of the puzzles are colour-flipped so Black is the side solving.
-- **Play**: any move that still forces mate in the remaining moves is accepted. The opponent replies with the toughest defence (it delays mate the longest, then leaves the fewest winning replies). A wrong move is refuted and taken back. Hint highlights the piece to move, then its target, and Show solution plays out the line.
-- **Links**: puzzles come from a seeded generator, so `chess/#m2-12345` always rebuilds the same puzzle.
-- **Code**: `chess/engine.js` (rules: legal moves, check and mate, SAN, FEN), `chess/puzzles.js` (solver and generator), `chess/app.js` (UI). `tests/chess.test.mjs` checks move generation against published perft counts and verifies generated puzzles.
+| Type | Levels | What you do |
+|---|---|---|
+| Checkmate | Mate in 1, 2, 3 | Force mate. Generated live; an exhaustive search checks that exactly one first move works and no faster mate exists. |
+| Win material | Easy, Medium, Hard | Find the tactic (fork, pin, skewer, discovered attack, sacrifice) that wins at least two pawns. From Medium on, nothing hangs at the start; Hard lines are only visible five plies deep. |
+| Best move | Easy, Medium, Hard | The opponent threatens something and exactly one move holds. |
+| Traps | Opening traps | Twelve named traps (Légal's Mate, Blackburne Shilling, Elephant, Lasker, Siberian, Noah's Ark, Kieninger and others). The opening plays out, then you punish the blunder. |
+| Traps | Poisoned bait | A piece looks free but taking it loses. Find the right move instead; taking the bait shows the refutation. |
+
+- **How tactics are checked**: random middlegames (castled kings, pawn cover, roughly equal material) are searched with alpha-beta plus quiescence (`chess/search.js`). A position becomes a puzzle only if one move is clearly best by the rules for its type (`chess/tactics.js`). The deeper searches take seconds to minutes per puzzle, so tactical puzzles are generated ahead of time into `chess/bank.js` by `chess/tools/build-bank.mjs`; mates are generated in the browser.
+- **Play**: the opponent answers with the toughest defence (or the stored main line). A different move is accepted if the search rates it as good as the main line. A wrong move is refuted on the board and taken back. Hint gives the theme, then the piece, then the move; Show solution plays the main line.
+- **Links**: `chess/#m2-12345` (mate, seeded), `#w2-7`, `#b3-4`, `#t1-2`, `#t2-9` (bank or trap number) rebuild the same puzzle.
+- **Tests**: `tests/chess.test.mjs` checks move generation against published perft counts, re-verifies mates and a sample of bank puzzles, replays every bank line and trap, and checks theme detection.
+
+To regenerate the bank: `node chess/tools/build-bank.mjs <win|best|bait> <level> <count> <seed> <part.json>` for each set, then `node chess/tools/build-bank.mjs --merge <part.json>...`.
 
 The page is not part of the GitHub Pages deployment and stores only solved and streak counts in `localStorage`.
 

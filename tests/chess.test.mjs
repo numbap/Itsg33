@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Position } from "../chess/engine.js";
+import { Position, sqName } from "../chess/engine.js";
+import { search, quiesce, evaluate, MATE } from "../chess/search.js";
+import { analysePuzzle, fromUci, toUci, gainBanked, theme, generateTactic } from "../chess/tactics.js";
+import { TRAPS, trapLine } from "../chess/traps.js";
+import { BANK } from "../chess/bank.js";
 import {
   generatePuzzle, rng, isPuzzle, forcesMate, winningMoves, solutionLine, flipColours, bestDefence, defenderLoses,
 } from "../chess/puzzles.js";
@@ -87,3 +91,66 @@ test("flipping colours keeps the puzzle valid with Black to move", () => {
   assert.equal(flipped.split(" ")[1], "b");
   assert.ok(isPuzzle(flipped, 2));
 });
+
+// --- Tactics, traps and the puzzle bank ---------------------------------------
+
+test("search sees mate, and quiescence wins a hanging piece", () => {
+  assert.ok(search(new Position("6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1"), 1) > MATE - 100);
+  const pos = new Position("4k3/8/8/3q4/8/8/3R4/4K3 w - - 0 1");
+  assert.equal(quiesce(pos, -MATE, MATE) - evaluate(pos), 900);
+});
+
+test("theme names a knight fork", () => {
+  const pos = new Position("r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1");
+  const nc7 = pos.legalMoves().find((m) => sqName(m.from) === "b5" && sqName(m.to) === "c7");
+  assert.equal(theme(pos.fen(), nc7), "Fork");
+});
+
+test("every opening trap is legal and ends in mate or a material win", () => {
+  for (const trap of TRAPS) {
+    const line = trapLine(trap);
+    const pos = new Position();
+    line.slice(0, trap.start).forEach((m) => pos.make(m));
+    const solver = pos.turn, base = evaluate(pos);
+    line.slice(trap.start).forEach((m) => pos.make(m));
+    const sign = pos.turn === solver ? 1 : -1;
+    assert.ok(pos.isCheckmate() || sign * evaluate(pos) - base >= 100, trap.name);
+  }
+});
+
+test("bank entries replay legally and win lines bank their material", () => {
+  for (const [id, list] of Object.entries(BANK)) {
+    assert.ok(list.length >= 8, `${id} has puzzles`);
+    for (const [fen, ucis, label, bait] of list) {
+      const pos = new Position(fen), base = evaluate(pos);
+      if (bait) assert.ok(fromUci(pos, bait), `${id} ${fen} bait is legal`);
+      const moves = ucis.split(" ");
+      for (const u of moves) {
+        const m = fromUci(pos, u);
+        assert.ok(m, `${id} ${fen}: ${u} is legal`);
+        pos.make(m);
+      }
+      assert.ok(label, "has a theme");
+      if (id.startsWith("win")) assert.ok(moves.length % 2 === 1 && gainBanked(pos, base), `${id} ${fen} line wins material`);
+    }
+  }
+});
+
+test("bank puzzles still pass the generator's checks", () => {
+  for (const [id, n] of [["win1", 4], ["win2", 3], ["best1", 4], ["best2", 2], ["bait1", 2]]) {
+    const kind = id.replace(/\d/, ""), level = Number(id.at(-1));
+    for (const [fen, ucis] of BANK[id].slice(0, n)) {
+      const a = analysePuzzle(fen, kind, level);
+      assert.ok(a, `${id} ${fen} still a puzzle`);
+      assert.equal(toUci(a.key), ucis.split(" ")[0]);
+    }
+  }
+});
+
+test("live tactic generation produces a valid easy puzzle", () => {
+  const random = rng(5);
+  let p = null;
+  while (!p) p = generateTactic("win", 1, random, 20);
+  assert.ok(analysePuzzle(p.fen, "win", 1));
+});
+

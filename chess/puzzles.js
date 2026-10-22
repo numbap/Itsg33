@@ -92,8 +92,8 @@ export function solutionLine(fen, n, random = Math.random) {
 
 // --- Generator --------------------------------------------------------------
 
-const pick = (random, items) => items[Math.floor(random() * items.length)];
-const weighted = (random, table) => {
+export const pick = (random, items) => items[Math.floor(random() * items.length)];
+export const weighted = (random, table) => {
   let x = random() * table.reduce((s, [, w]) => s + w, 0);
   for (const [v, w] of table) if ((x -= w) < 0) return v;
   return table[table.length - 1][0];
@@ -155,7 +155,7 @@ function randomSetup(random, n) {
   return board;
 }
 
-function boardFen(board) {
+export function boardFen(board) {
   const rows = [];
   for (let r = 7; r >= 0; r--) {
     let row = "", empty = 0;
