@@ -5,6 +5,7 @@ import { search, quiesce, evaluate, MATE } from "../chess/search.js";
 import { analysePuzzle, fromUci, toUci, gainBanked, theme, generateTactic } from "../chess/tactics.js";
 import { TRAPS, trapLine } from "../chess/traps.js";
 import { BANK } from "../chess/bank.js";
+import { OPENING_TRAPS } from "../chess/opening-traps.js";
 import {
   generatePuzzle, rng, isPuzzle, forcesMate, winningMoves, solutionLine, flipColours, bestDefence, defenderLoses,
 } from "../chess/puzzles.js";
@@ -115,6 +116,22 @@ test("every opening trap is legal and ends in mate or a material win", () => {
     line.slice(trap.start).forEach((m) => pos.make(m));
     const sign = pos.turn === solver ? 1 : -1;
     assert.ok(pos.isCheckmate() || sign * evaluate(pos) - base >= 100, trap.name);
+  }
+});
+
+test("generated opening blunders replay legally and the punishment banks material", () => {
+  assert.ok(OPENING_TRAPS.length >= 50, "plenty of opening blunders");
+  const seen = new Set();
+  for (const trap of OPENING_TRAPS) {
+    assert.ok(!seen.has(trap.moves), `${trap.name} is not a duplicate`);
+    seen.add(trap.moves);
+    const line = trapLine(trap);
+    const pos = new Position();
+    line.slice(0, trap.start - 1).forEach((m) => pos.make(m));
+    const before = -evaluate(pos); // solver's balance before the blunder
+    line.slice(trap.start - 1).forEach((m) => pos.make(m));
+    assert.equal(line.length % 2, trap.start % 2 ? 0 : 1, `${trap.name}: the solver makes the last move`);
+    assert.ok(gainBanked(pos, before), `${trap.opening} ${trap.name} wins material`);
   }
 });
 

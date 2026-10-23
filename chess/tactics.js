@@ -63,7 +63,7 @@ function legalStart(pos) {
 }
 
 // Moves (other than `except`) that score at least t.
-function movesAtLeast(pos, depth, t, except, limit = Infinity) {
+export function movesAtLeast(pos, depth, t, except, limit = Infinity) {
   const found = [];
   for (const m of pos.legalMoves()) {
     if (except && m.from === except.from && m.to === except.to && m.promo === except.promo) continue;
@@ -206,6 +206,7 @@ export function theme(fen, key) {
   const before = pos.board.slice();
   const san = pos.san(key);
   pos.make(key);
+  if (!pos.hasLegalMove() && pos.inCheck()) return "Checkmate";
   const b = pos.board, piece = b[key.to], worth = (t) => (b[t].toLowerCase() === "k" ? 10000 : VALUE[b[t].toLowerCase()]);
   const { hits, xrays } = attacks(b, key.to, piece);
   const big = hits.filter((t) => worth(t) > VALUE[piece.toLowerCase()] || !pos.attacked(t, colorOf(b[t]) === "w" ? "w" : "b") || worth(t) >= 500);

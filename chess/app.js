@@ -6,6 +6,7 @@ import { generatePuzzle, rng, defenderLoses, bestDefence, winningMoves, solution
 import { SETTINGS, judgeMove, gainBanked, reply, fromUci } from "./tactics.js";
 import { evaluate, bestMove } from "./search.js";
 import { TRAPS, trapLine } from "./traps.js";
+import { OPENING_TRAPS } from "./opening-traps.js";
 import { BANK } from "./bank.js";
 
 const GLYPH = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
@@ -15,7 +16,7 @@ const TYPES = {
   m: { levels: ["Mate in 1", "Mate in 2", "Mate in 3"] },
   w: { kind: "win", levels: ["Easy", "Medium", "Hard"] },
   b: { kind: "best", levels: ["Easy", "Medium", "Hard"] },
-  t: { levels: ["Opening traps", "Poisoned bait"] },
+  t: { levels: ["Famous traps", "Opening blunders", "Poisoned bait"] },
 };
 const THEME_HINT = {
   Fork: "look for a fork", Pin: "look for a pin", Skewer: "look for a skewer",
@@ -195,7 +196,8 @@ function clearSelection() { state.selected = -1; state.targets = []; }
 
 const hashOf = (p) => `#${p.type}${p.level}-${p.id}`;
 const bankKey = (type, level) => (type === "t" ? "bait1" : `${TYPES[type].kind}${level}`);
-const poolSize = (type, level) => (type === "t" && level === 1 ? TRAPS.length : BANK[bankKey(type, level)]?.length ?? 0);
+const trapList = (level) => (level === 1 ? TRAPS : OPENING_TRAPS);
+const poolSize = (type, level) => (type === "t" && level < 3 ? trapList(level).length : BANK[bankKey(type, level)]?.length ?? 0);
 
 // Bank puzzles are dealt from a shuffled deck so they do not repeat until all have been seen.
 function nextId(type, level) {
@@ -240,11 +242,12 @@ async function load(type, level, id = nextId(type, level)) {
       if (token !== state.gen) return;
     }
     puzzle = { type, level, id, fen: found.fen };
-  } else if (type === "t" && level === 1) {
-    const trap = TRAPS[id % TRAPS.length];
+  } else if (type === "t" && level < 3) {
+    const list = trapList(level), trap = list[id % list.length];
     const full = trapLine(trap), pos = new Position();
     full.slice(0, trap.start).forEach((m) => pos.make(m));
-    puzzle = { type, level, id, trap, fen: pos.fen(), intro: full.slice(0, trap.start), line: full.slice(trap.start) };
+    // Generated opening blunders are judged by search like other tactics; famous traps follow their book line.
+    puzzle = { type, level, id, trap, fen: pos.fen(), intro: full.slice(0, trap.start), line: full.slice(trap.start), kind: trap.kind, engineLevel: 2 };
   } else {
     const list = BANK[bankKey(type, level)];
     const [fen, ucis, theme, baitUci] = list[id % list.length];
@@ -293,6 +296,12 @@ function start(animate = false) {
 function begin() {
   const p = state.puzzle;
   state.base = evaluate(state.pos);
+  if (p.trap?.kind) {
+    // Measure the win from before the blunder, so recapturing a traded piece does not count.
+    const blunder = state.pos.undo();
+    state.base = -evaluate(state.pos);
+    state.pos.make(blunder);
+  }
   state.phase = "play";
   if (p.type === "m") setStatus("Find the move that forces mate.");
   else if (p.type === "w") setStatus("Find the move that wins material.");
@@ -356,7 +365,7 @@ function playLine(m, san) {
   const mate = pos.isCheckmate();
   pos.undo();
   if (mate) return accept(m, san);
-  if (p.trap) { pos.make(m); state.moves.push({ san, by: "me" }); return wrong(m, san, false); }
+  if (p.trap && !p.kind) { pos.make(m); state.moves.push({ san, by: "me" }); return wrong(m, san, false); }
   state.phase = "thinking";
   setStatus(`Checking ${san}…`);
   render();
@@ -377,8 +386,8 @@ function accept(m, san) {
   state.focus = m.to;
   const oneMove = p.type === "b" || (p.type === "t" && !p.trap);
   if (pos.isCheckmate() || oneMove) return solved();
-  if (p.type === "w" && (gainBanked(pos, state.base) || state.ply >= 9)) return solved();
-  if (p.trap && state.ply >= p.line.length) return solved();
+  if (p.kind === "win" && (gainBanked(pos, state.base) || state.ply >= 9)) return solved();
+  if (p.trap && !p.kind && state.ply >= p.line.length) return solved();
   if (!pos.hasLegalMove()) return solved();
   state.phase = "opponent";
   setStatus(`${san} is right. Waiting for the reply…`, "ok");
@@ -456,7 +465,8 @@ function solved() {
 
 function explain() {
   const p = state.puzzle;
-  if (p.trap) setIdea(`${p.trap.name} (${p.trap.opening}). ${p.trap.idea}`);
+  if (p.trap?.kind) setIdea(p.trap.idea);
+  else if (p.trap) setIdea(`${p.trap.name} (${p.trap.opening}). ${p.trap.idea}`);
   else if (p.bait) setIdea(`The bait was ${p.baitSan}: the piece looked free, but taking it loses. Theme of the right move: ${p.theme}.`);
   else if (p.theme) setIdea(`Theme: ${p.theme}.`);
 }

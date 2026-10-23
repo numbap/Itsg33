@@ -106,15 +106,17 @@ Add an object to the relevant `controls-*.js` file. The tests check that every c
 | Checkmate | Mate in 1, 2, 3 | Force mate. Generated live; an exhaustive search checks that exactly one first move works and no faster mate exists. |
 | Win material | Easy, Medium, Hard | Find the tactic (fork, pin, skewer, discovered attack, sacrifice) that wins at least two pawns. From Medium on, nothing hangs at the start; Hard lines are only visible five plies deep. |
 | Best move | Easy, Medium, Hard | The opponent threatens something and exactly one move holds. |
-| Traps | Opening traps | Twelve named traps (Légal's Mate, Blackburne Shilling, Elephant, Lasker, Siberian, Noah's Ark, Kieninger and others). The opening plays out, then you punish the blunder. |
+| Traps | Famous traps | 27 named traps (Légal's Mate, Blackburne Shilling, Elephant, Lasker, Siberian, Noah's Ark, Kieninger, Stafford, Magnus Smith, Caro-Kann smothered mate, Scandinavian queen trap and others). The opening plays out, then you punish the blunder. |
+| Traps | Opening blunders | 214 generated traps from 42 openings: the game follows a real opening line plus a few plausible moves, then one side plays a natural-looking move that loses to a tactic or mate. |
 | Traps | Poisoned bait | A piece looks free but taking it loses. Find the right move instead; taking the bait shows the refutation. |
 
 - **How tactics are checked**: random middlegames (castled kings, pawn cover, roughly equal material) are searched with alpha-beta plus quiescence (`chess/search.js`). A position becomes a puzzle only if one move is clearly best by the rules for its type (`chess/tactics.js`). The deeper searches take seconds to minutes per puzzle, so tactical puzzles are generated ahead of time into `chess/bank.js` by `chess/tools/build-bank.mjs`; mates are generated in the browser.
 - **Play**: the opponent answers with the toughest defence (or the stored main line). A different move is accepted if the search rates it as good as the main line. A wrong move is refuted on the board and taken back. Hint gives the theme, then the piece, then the move; Show solution plays the main line.
-- **Links**: `chess/#m2-12345` (mate, seeded), `#w2-7`, `#b3-4`, `#t1-2`, `#t2-9` (bank or trap number) rebuild the same puzzle.
+- **Puzzle counts**: win material 170 / 170 / 73, best move 170 / 146 / 104 (easy / medium / hard), poisoned bait 156, opening traps 27 famous + 214 generated, and unlimited live checkmates. Bank puzzles are dealt from a shuffled deck, so none repeats until the whole set has been seen.
+- **Links**: `chess/#m2-12345` (mate, seeded), `#w2-7`, `#b3-4`, `#t1-2` (famous trap), `#t2-9` (opening blunder), `#t3-5` (poisoned bait) rebuild the same puzzle.
 - **Tests**: `tests/chess.test.mjs` checks move generation against published perft counts, re-verifies mates and a sample of bank puzzles, replays every bank line and trap, and checks theme detection.
 
-To regenerate the bank: `node chess/tools/build-bank.mjs <win|best|bait> <level> <count> <seed> <part.json>` for each set, then `node chess/tools/build-bank.mjs --merge <part.json>...`.
+To regenerate the bank: `node chess/tools/build-bank.mjs <win|best|bait> <level> <count> <seed> <part.json>` for each set, then `node chess/tools/build-bank.mjs --merge <part.json>...` (duplicates are dropped). Opening blunders: `node chess/tools/build-openings.mjs <count> <seed> <part.json>`, then `--merge` into `chess/opening-traps.js`. Run several seeds in parallel; a few hundred puzzles take about 15 minutes on four cores.
 
 The page is not part of the GitHub Pages deployment and stores only solved and streak counts in `localStorage`.
 

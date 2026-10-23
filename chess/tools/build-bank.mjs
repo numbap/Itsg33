@@ -24,7 +24,10 @@ if (args[0] === "--merge") {
     const part = JSON.parse(await readFile(f, "utf8"));
     const { fromUci } = await import("../tactics.js");
     const kind = part.id.replace(/\d/, "");
+    const have = new Set((bank[part.id] ?? []).map(([fen]) => fen));
     (bank[part.id] ??= []).push(...part.puzzles.filter(([fen, ucis]) => {
+      if (have.has(fen)) return false;
+      have.add(fen);
       const pos = new Position(fen), line = [];
       for (const u of ucis.split(" ")) { const m = fromUci(pos, u); line.push(m); pos.make(m); }
       return lineFinishes(fen, line, kind);
