@@ -1,10 +1,10 @@
 #!/bin/bash
 # Copies live pipeline state from the scratch run into data/ and commits it. Run in a loop.
-SRC=/tmp/claude-0/-home-user-Itsg33/cbd793b2-8d08-5068-bdb3-e1dae479b00c/scratchpad/mine
+SRC=${SRC:-/tmp/claude-0/-home-user-Itsg33/cbd793b2-8d08-5068-bdb3-e1dae479b00c/scratchpad/mine}
 cd "$(dirname "$0")"
 while true; do
-  for f in rank.json orders.json trees.json; do [ -f "$SRC/$f" ] && cp "$SRC/$f" data/; done
-  for f in chain.log vargen.log movefetch.log; do [ -f "$SRC/$f" ] && cp "$SRC/$f" data/; done
+  for f in rank.json orders.json trees.json; do [ -f "$SRC/$f" ] && [ "$SRC" != data ] && cp "$SRC/$f" data/; done
+  for f in chain.log vargen.log movefetch.log; do [ -f "$SRC/$f" ] && [ "$SRC" != data ] && cp "$SRC/$f" data/; done
   if [ -n "$(git status --porcelain -- data)" ]; then
     git add data && git commit -q -m "Trapdoor Chess: checkpoint mining pipeline state [skip ci]
 
