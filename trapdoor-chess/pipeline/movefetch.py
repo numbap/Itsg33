@@ -1,5 +1,5 @@
 # Stage 3: rebuild a natural move order for each top-ranked trap position from its source game.
-import json, time, urllib.request, chess, chess.pgn, io, os, sys
+import re, json, time, urllib.request, chess, chess.pgn, io, os, sys
 N=int(sys.argv[1]) if len(sys.argv)>1 else 400
 CAND=json.load(open('data/candidates.json'))
 C={r['key']:r for r in CAND['clusters']}
@@ -21,7 +21,7 @@ for k in keys:
     if k in out: continue
     r=C[k]; got=None
     for pid in r['ids']:
-        p=P[pid]; gid=p['url'].split('/')[-1].split('#')[0]
+        p=P[pid]; gid=re.search(r'lichess\.org/(?:game/)?([A-Za-z0-9]{8})',p['url']).group(1)
         txt=pgn(gid); time.sleep(1.1)
         if not txt: continue
         g=chess.pgn.read_game(io.StringIO(txt)); b=g.board(); sans=[]
