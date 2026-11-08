@@ -12,7 +12,8 @@ def q(fen):
             raise
         except Exception: time.sleep(5)
     return None
-for i,r in enumerate(R):
+LIMIT=int(sys.argv[1]) if len(sys.argv)>1 else len(R)
+for i,r in enumerate(R[:LIMIT]):
     if r['key'] in done: continue
     pre=r['best']['fen']; bl=r['best']['blunder']
     d=q(pre)
