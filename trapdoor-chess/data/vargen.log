@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-Itsg33/cbd793b2-8d08-5068-bdb3-e1dae479b00c/scratchpad/mine/vargen.py", line 74, in <module>
+    O=json.load(open('orders.json')); out=json.load(open('trees.json')) if os.path.exists('trees.json') else {}
+                ~~~~^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'orders.json'

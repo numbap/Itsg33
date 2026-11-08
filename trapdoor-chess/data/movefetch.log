@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-Itsg33/cbd793b2-8d08-5068-bdb3-e1dae479b00c/scratchpad/mine/movefetch.py", line 31, in <module>
+    bl=chess.Move.from_uci(p['blunder']); sans.append(b.san(bl)); b.push(bl)
+                           ~^^^^^^^^^^^
+KeyError: 'blunder'
