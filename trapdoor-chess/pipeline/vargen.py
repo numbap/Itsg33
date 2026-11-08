@@ -46,6 +46,7 @@ def extend(b,me,line,depth_left):
     ours=len(L[::2])  # trapper moves so far (lines start with the trapper's move)
     mating=s1>9000
     if mating and depth_left>-4: pass        # keep playing a forced mate out to the end
+    elif b2.is_check() and depth_left>-2: pass   # don't stop on a check: see the point of it
     elif depth_left<=0 or s1>=300 or (s1>=150 and ours>=2): return [(L,{"eval":s1})]
     res=[]
     if b2.is_game_over(): return [(L,{"eval":s1})]
@@ -72,6 +73,7 @@ def build(setup,sol):
     if b.san(r[0]["pv"][0])!=first: return None,"engine prefers "+b.san(r[0]["pv"][0])
     if best<150: return None,f"only {best}"
     b2=b.copy(); b2.push_san(first)
+    if b2.is_checkmate(): return dict(lines=[dict(moves=first,mate=True,human=-1)],first_eval=best,second_eval=second),None
     lines=[]
     for dsan,n in defences(b2,me,3):
         b3=b2.copy(); b3.push_san(dsan)
