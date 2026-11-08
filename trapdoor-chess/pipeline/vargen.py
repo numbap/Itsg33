@@ -23,13 +23,16 @@ def ev(b,me):
     return cp(eng.analyse(b,chess.engine.Limit(depth=D))["score"].pov(me))
 def defences(b,me,maxn=3):
     """Human replies with >=8% share (min 20 games), plus the engine's best defence."""
+    if b.is_game_over(): return []
     out=[]; d=explorer(b.fen())
     if d:
         tot=sum(m['white']+m['draws']+m['black'] for m in d['moves']) or 1
         for m in d['moves']:
             n=m['white']+m['draws']+m['black']
             if n>=20 and n/tot>=(0.08 if maxn>=3 else 0.15): out.append((m['san'],n))
-    best=eng.analyse(b,chess.engine.Limit(depth=D))["pv"][0]; bs=b.san(best)
+    pv=eng.analyse(b,chess.engine.Limit(depth=D)).get("pv")
+    if not pv: return out[:maxn+1]
+    bs=b.san(pv[0])
     if bs not in [s for s,_ in out]: out.append((bs,-1))   # -1 marks "engine best defence"
     return out[:maxn+1]
 def extend(b,me,line,depth_left):
@@ -45,7 +48,12 @@ def extend(b,me,line,depth_left):
     if mating and depth_left>-4: pass        # keep playing a forced mate out to the end
     elif depth_left<=0 or s1>=300 or (s1>=150 and ours>=2): return [(L,{"eval":s1})]
     res=[]
-    for dsan,n in (defences(b2,me,1 if depth_left<=1 else 2) if not mating else [(b2.san(eng.analyse(b2,chess.engine.Limit(depth=D))["pv"][0]),-1)]):
+    if b2.is_game_over(): return [(L,{"eval":s1})]
+    if mating:
+        pv=eng.analyse(b2,chess.engine.Limit(depth=D)).get("pv")
+        reps=[(b2.san(pv[0]),-1)] if pv else []
+    else: reps=defences(b2,me,1 if depth_left<=1 else 2)
+    for dsan,n in reps:
         b3=b2.copy(); b3.push_san(dsan)
         r3=eng.analyse(b3,chess.engine.Limit(depth=D),multipv=2)
         a1=cp(r3[0]["score"].pov(me)); a2=cp(r3[1]["score"].pov(me)) if len(r3)>1 else -99999
@@ -75,7 +83,8 @@ if __name__=="__main__":
     lim=int(sys.argv[1]) if len(sys.argv)>1 else 10**9
     for k,o in list(O.items())[:lim]:
         if not o or k in out: continue
-        t,err=build(o['setup'],o['sol'])
+        try: t,err=build(o['setup'],o['sol'])
+        except Exception as e: t,err=None,f"error: {type(e).__name__}: {e}"
         out[k]=dict(order=o,tree=t,reject=err); json.dump(out,open('data/trees.json','w'))
         print(("OK " if t else "-- ")+o['setup'][-40:],err or len(t['lines']),flush=True)
     eng.quit()
