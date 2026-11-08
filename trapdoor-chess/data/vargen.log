@@ -1,5 +1,12 @@
+OK e6 c4 d5 cxd5 exd5 Nc3 Nf6 Bg5 Nbd7 Nxd5 1
 Traceback (most recent call last):
-  File "/tmp/claude-0/-home-user-Itsg33/cbd793b2-8d08-5068-bdb3-e1dae479b00c/scratchpad/mine/vargen.py", line 74, in <module>
-    O=json.load(open('orders.json')); out=json.load(open('trees.json')) if os.path.exists('trees.json') else {}
-                ~~~~^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: 'orders.json'
+  File "/home/user/Itsg33/trapdoor-chess/work/../pipeline/vargen.py", line 78, in <module>
+    t,err=build(o['setup'],o['sol'])
+          ~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/Itsg33/trapdoor-chess/work/../pipeline/vargen.py", line 68, in build
+    for dsan,n in defences(b2,me,3):
+                  ~~~~~~~~^^^^^^^^^
+  File "/home/user/Itsg33/trapdoor-chess/work/../pipeline/vargen.py", line 32, in defences
+    best=eng.analyse(b,chess.engine.Limit(depth=D))["pv"][0]; bs=b.san(best)
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+KeyError: 'pv'
