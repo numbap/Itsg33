@@ -38,13 +38,16 @@ cd db && python3 validate.py traps.json 16
 3. `movefetch.py N`: rebuild a natural move order for the top N from their source games. Writes `data/orders.json`.
 4. `vargen.py`: variation trees from real human replies plus engine best defence. Writes `data/trees.json`.
 
-All stages resume from their JSON files. Run from this folder:
+All stages resume from their JSON files. Live runs write to the untracked `work/data/`, and
+`./checkpoint.sh` copies a snapshot into `data/` and commits it every 20 minutes, so `data/`
+only changes at commit time. To start a run, seed `work/data/` from `data/`, then from `work/`:
 
 ```bash
 pip install chess==1.10.0 && apt-get install -y stockfish
-python3 pipeline/rank.py        # resumes where data/rank.json left off
-python3 pipeline/movefetch.py 350
-python3 pipeline/vargen.py
+mkdir -p work/data && cp data/*.json work/data/ && cd work
+python3 ../pipeline/rank.py 800     # resumes where data/rank.json left off
+python3 ../pipeline/movefetch.py 350
+python3 ../pipeline/vargen.py
 ```
 
 Then validate the generated lines, write names and notes, and add them to `db/build_db.py`.
