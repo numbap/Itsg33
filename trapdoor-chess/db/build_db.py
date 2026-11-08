@@ -261,5 +261,9 @@ trap("pirc150","Pirc 150 Attack Trap","Pirc Defense (150 Attack)",OE,"w",2,"e4 d
  "Your queen is already on h6. Bring a second attacker to h7.",
  ("Ng5 Nbd7","Black develops ...Nbd7","Now Nd5 hits the f6 defender, or castle first. Mate on h7 can't be stopped without big losses."))
 
+# ---- mined batches (Lichess puzzle database) ----
+import glob as _g, os as _o
+for _f in sorted(_g.glob(_o.path.join(_o.path.dirname(_o.path.abspath(__file__)),"mined_batch*.py"))): exec(open(_f).read())
+
 json.dump(T,open("traps.json","w"),indent=1,ensure_ascii=False)
 print(len(T),"traps")
