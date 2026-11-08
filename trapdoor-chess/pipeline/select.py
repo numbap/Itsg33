@@ -3,7 +3,8 @@
 # traps with no variations; ranks by how often club players fall for them.
 import json, chess, sys, collections
 N=int(sys.argv[1]) if len(sys.argv)>1 else 25
-PRIORITY=["French_Defense","Kings_Indian_Defense","Indian_Defense","Scandinavian_Defense","Scotch_Game","Italian_Game"]
+PRIORITY=sys.argv[2].split(",") if len(sys.argv)>2 else ["French_Defense","Kings_Indian_Defense","Indian_Defense","Scandinavian_Defense","Scotch_Game","Italian_Game"]
+CAP=int(sys.argv[3]) if len(sys.argv)>3 else 6
 trees=json.load(open('data/trees.json'))
 have=set()
 for t in json.load(open('../db/traps.json')):
@@ -28,7 +29,7 @@ fam_rank=lambda r: next((i for i,f in enumerate(PRIORITY) if r['o']['family'].st
 pick=[]; per=collections.Counter()
 for r in sorted(rows,key=lambda r:(fam_rank(r),-r['score'])):
     f=r['o']['family']
-    if per[f]>=(6 if fam_rank(r)<len(PRIORITY) else 3): continue
+    if per[f]>=(CAP if fam_rank(r)<len(PRIORITY) else 2): continue
     pick.append(r); per[f]+=1
     if len(pick)>=N: break
 out=[]
