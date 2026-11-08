@@ -1,0 +1,525 @@
+<title>Trapdoor Chess</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: library rail | board | scoresheet panel; stacks to board-first on phones */
+:root{
+  --bg:#f2f4f0; --surface:#ffffff; --ink:#1d2622; --muted:#5f6b66; --line:#d7ddd7;
+  --sq-light:#dfe5db; --sq-dark:#5d7f77; --accent:#c8862a; --accent-ink:#7a4c0f;
+  --good:#2f7d4f; --bad:#b4443a; --sel:rgba(200,134,42,.55); --last:rgba(234,190,80,.45);
+  --display:"Young Serif",Georgia,"Times New Roman",serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111715; --surface:#19211e; --ink:#e7ece9; --muted:#97a49e; --line:#2c3733;
+  --sq-light:#b9c4b6; --sq-dark:#476a62; --accent:#e0a14a; --accent-ink:#f0c27d;
+  --good:#5cbf84; --bad:#e2786d; --sel:rgba(224,161,74,.6); --last:rgba(234,190,80,.42); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111715; --surface:#19211e; --ink:#e7ece9; --muted:#97a49e; --line:#2c3733;
+  --sq-light:#b9c4b6; --sq-dark:#476a62; --accent:#e0a14a; --accent-ink:#f0c27d;
+  --good:#5cbf84; --bad:#e2786d; --sel:rgba(224,161,74,.6); --last:rgba(234,190,80,.42); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,4vw,36px);margin:0;letter-spacing:-.01em}
+h1 span{color:var(--accent)}
+.tag{color:var(--muted);margin:0;max-width:52ch}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:1060px){.app{grid-template-columns:minmax(0,1fr) 300px}.lib{grid-column:1/-1;order:3}}
+@media (max-width:760px){.app{grid-template-columns:minmax(0,1fr)}.panel{order:2}}
+
+/* library */
+.lib{position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column;min-height:0}
+@media (max-width:1060px){.lib{position:static;max-height:none}}
+.libhead{display:grid;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.progress{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--good);width:0;transition:width .3s}
+#q{all:unset;box-sizing:border-box;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font:14px var(--body);color:var(--ink)}
+#q:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{all:unset;box-sizing:border-box;font:500 12px/1 var(--body);padding:6px 9px;border-radius:999px;border:1px solid var(--line);cursor:pointer;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.libscroll{overflow:auto;min-height:0;padding-right:4px}
+@media (max-width:1060px){.libscroll{overflow:visible}}
+.empty{color:var(--muted);font-size:13px;padding:8px 10px}
+.lvl{display:inline-block;font:600 10px/1 var(--mono);letter-spacing:.06em;color:var(--muted);margin-left:6px;vertical-align:1px}
+.lib .side{display:inline-block;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink);margin-right:6px;vertical-align:0}
+.lib .side.w{background:#fafaf7}.lib .side.b{background:#1b1b1b}
+.badge{display:inline-block;font:600 10px/1.4 var(--body);text-transform:uppercase;letter-spacing:.08em;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:2px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:2px}
+.lib h2,.panel h2{font-family:var(--body);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 8px}
+.lib .grp{margin-bottom:18px}
+.lib ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+@media (max-width:1060px){.lib .grps{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}}
+@media (max-width:560px){.lib .grps{grid-template-columns:1fr}}
+.lib li button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;width:100%;padding:7px 10px;border-radius:6px;cursor:pointer}
+.lib li button:hover{background:var(--surface)}
+.lib li button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.lib li button[aria-current="true"]{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.lib .op{font-size:14px;font-weight:500}
+.lib .sub{display:block;font-size:12px;color:var(--muted)}
+.pips{display:flex;gap:3px}
+.pip{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--muted);opacity:.6}
+.pip.on{background:var(--good);border-color:var(--good);opacity:1}
+
+/* board */
+.stage{display:grid;gap:12px;min-width:0}
+.boardbox{position:relative;width:100%;max-width:min(620px,calc(100vh - 140px));min-width:0;margin:0 auto}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;max-width:100%;border-radius:4px;overflow:hidden;box-shadow:0 1px 0 var(--line),0 10px 30px -14px rgba(0,0,0,.45);touch-action:none;user-select:none;-webkit-user-select:none}
+.sq{position:relative;background:var(--sq-light)}
+.sq.d{background:var(--sq-dark)}
+.sq.last::before{content:"";position:absolute;inset:0;background:var(--last)}
+.sq.sel::before{content:"";position:absolute;inset:0;background:var(--sel)}
+.sq.hint::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--accent)}
+.sq.check{background-image:radial-gradient(circle,rgba(220,40,30,.9) 0%,rgba(220,40,30,.45) 45%,transparent 72%)}
+.sq.dot::after{content:"";position:absolute;left:36%;top:36%;width:28%;height:28%;border-radius:50%;background:rgba(20,30,25,.28);pointer-events:none;z-index:2}
+.sq.dot.cap::after{left:4%;top:4%;width:92%;height:92%;background:none;border:5px solid rgba(20,30,25,.28)}
+.coord{position:absolute;font:600 10px/1 var(--mono);pointer-events:none;z-index:1}
+.coord.f{right:3px;bottom:3px}.coord.r{left:3px;top:3px}
+.sq .coord{color:var(--sq-dark)} .sq.d .coord{color:var(--sq-light)}
+.pc{position:absolute;inset:0;background-size:100% 100%;z-index:3;cursor:grab;transition:transform .18s ease}
+.pc.drag{opacity:.25}
+.ghost{position:fixed;pointer-events:none;z-index:50;background-size:100% 100%}
+.flash-bad .board{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.flash-bad .board{animation:none}.pc{transition:none}}
+.promo{position:absolute;inset:0;background:rgba(10,15,13,.55);display:grid;place-items:center;z-index:20}
+.promo div{display:flex;gap:6px;background:var(--surface);padding:10px;border-radius:8px}
+.promo button{all:unset;width:64px;height:64px;background-size:100%;border-radius:6px;cursor:pointer}
+.promo button:hover,.promo button:focus-visible{background-color:var(--sq-light);outline:2px solid var(--accent)}
+
+/* status strip under board */
+.navbar{display:flex;align-items:center;justify-content:center;gap:6px;max-width:620px;margin:0 auto;width:100%}
+.navbtn{all:unset;box-sizing:border-box;display:grid;place-items:center;width:44px;height:38px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.navbtn:hover{border-color:var(--muted)}
+.navbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.navbtn[disabled]{opacity:.35;pointer-events:none}
+.navbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.navpos{min-width:9.5em;text-align:center;font:500 13px/1.2 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.navpos.past{color:var(--accent-ink);font-weight:600}
+.board.past{filter:saturate(.75)}
+.sheet span.mv{cursor:pointer}
+.sheet span.mv:hover{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+.status{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;min-height:40px;max-width:620px;margin:0 auto;width:100%}
+.turn{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.turn i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink)}
+.turn i.w{background:#fafaf7}.turn i.b{background:#1b1b1b}
+.msg{color:var(--muted)}
+.msg.good{color:var(--good);font-weight:600}.msg.bad{color:var(--bad);font-weight:600}
+
+/* panel */
+.panel{display:grid;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.trapname{font-family:var(--display);font-size:24px;line-height:1.15;margin:4px 0 6px;text-wrap:balance}
+.trapname.hidden{color:var(--muted)}
+.idea{margin:8px 0 0;padding:10px 12px;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:0 6px 6px 0;font-size:14px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{all:unset;box-sizing:border-box;font:500 14px/1 var(--body);padding:10px 14px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.vars{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.vars li{display:grid;grid-template-columns:18px 1fr;gap:8px;font-size:14px;align-items:start}
+.vars .ck{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--muted);margin-top:2px;display:grid;place-items:center;font-size:11px;color:#fff}
+.vars li.done .ck{background:var(--good);border-color:var(--good)}
+.vars li.now{font-weight:600}
+.vars li.unk{color:var(--muted)}
+.vars .n{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.sheet{font-family:var(--mono);font-size:13px;display:grid;grid-template-columns:2.4em 1fr 1fr;gap:2px 6px;max-height:220px;overflow:auto;font-variant-numeric:tabular-nums}
+.sheet .no{color:var(--muted)}
+.sheet span.mv{padding:1px 4px;border-radius:3px}
+.sheet span.trap{color:var(--accent-ink);font-weight:600}
+.sheet span.cur{background:color-mix(in srgb,var(--accent) 25%,transparent)}
+.result{display:none}
+.result.show{display:block}
+.result h3{margin:0 0 4px;font-family:var(--display);font-weight:400;font-size:20px;color:var(--good)}
+.result p{margin:0}
+footer{margin-top:28px;color:var(--muted);font-size:12px}
+.kbd{font-family:var(--mono);font-size:12px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Trapdoor <span>Chess</span></h1>
+    <p class="tag">A library of classic opening traps. Each puzzle plays the opening up to the moment the trap can be sprung. Find the move, then keep going as your opponent tries every known defence.</p>
+  </header>
+
+  <div class="app">
+    <nav class="lib" aria-label="Trap library">
+      <div class="libhead">
+        <div class="progress"><span id="progTxt"></span><div class="bar"><i id="progBar"></i></div></div>
+        <label for="q" class="eyebrow">Find a trap</label>
+        <input id="q" type="search" placeholder="Opening or trap name" autocomplete="off">
+        <div class="chips" role="group" aria-label="Side">
+          <button class="chip" data-f="side" data-v="" aria-pressed="true">Both sides</button>
+          <button class="chip" data-f="side" data-v="w" aria-pressed="false">As White</button>
+          <button class="chip" data-f="side" data-v="b" aria-pressed="false">As Black</button>
+        </div>
+        <div class="chips" role="group" aria-label="Difficulty">
+          <button class="chip" data-f="level" data-v="" aria-pressed="true">All levels</button>
+          <button class="chip" data-f="level" data-v="1" aria-pressed="false">Beginner</button>
+          <button class="chip" data-f="level" data-v="2" aria-pressed="false">Intermediate</button>
+          <button class="chip" data-f="level" data-v="3" aria-pressed="false">Advanced</button>
+        </div>
+        <div class="chips">
+          <button class="chip" data-f="todo" data-v="1" aria-pressed="false">Unfinished only</button>
+          <button class="chip" id="randomBtn">Random trap</button>
+        </div>
+      </div>
+      <div class="libscroll"><div class="grps" id="lib"></div></div>
+    </nav>
+
+    <section class="stage" aria-label="Board">
+      <div class="boardbox" id="boardbox">
+        <div class="board" id="board" role="grid" aria-label="Chessboard"></div>
+      </div>
+      <div class="navbar" role="group" aria-label="Move navigation">
+        <button class="navbtn" id="navStart" aria-label="Go to start" title="Start (Home)"><svg viewBox="0 0 24 24"><path d="M6 5v14M18 6l-7 6 7 6"/></svg></button>
+        <button class="navbtn" id="navPrev" aria-label="Previous move" title="Previous move (←)"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <span class="navpos" id="navPos" aria-live="polite"></span>
+        <button class="navbtn" id="navNext" aria-label="Next move" title="Next move (→)"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="navbtn" id="navEnd" aria-label="Go to latest move" title="Latest move (End)"><svg viewBox="0 0 24 24"><path d="M18 5v14M6 6l7 6-7 6"/></svg></button>
+      </div>
+      <div class="status">
+        <span class="turn" id="turn"></span>
+        <span class="msg" id="msg" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="card">
+        <div class="eyebrow" id="opening"></div>
+        <div class="trapname hidden" id="trapname">Unknown trap</div>
+        <div class="meta" id="meta"></div>
+        <div class="btns" style="margin-top:12px">
+          <button class="btn" id="hintBtn">Hint</button>
+          <button class="btn" id="retryBtn">Restart</button>
+          <button class="btn" id="replayBtn">Replay opening</button>
+        </div>
+        <div class="idea" id="idea" hidden></div>
+      </div>
+
+      <div class="card result" id="result">
+        <h3 id="resTitle">Trap sprung</h3>
+        <p id="resNote"></p>
+        <div class="btns" style="margin-top:12px">
+          <button class="btn primary" id="nextVarBtn">Try another variation</button>
+          <button class="btn" id="nextTrapBtn">Next trap</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Variations</h2>
+        <ul class="vars" id="vars"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Scoresheet</h2>
+        <div class="sheet" id="sheet"></div>
+      </div>
+    </aside>
+  </div>
+  <footer>Click or drag pieces to move. Step through the moves with the arrow buttons, the ← → keys, or by clicking the scoresheet. Opponent replies are picked from known defences, favouring ones you haven't seen yet. Every line was checked with Stockfish 16. Piece set: cburnett (GPLv2+). Rules: chess.js.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<style>/*PIECES*/</style>
+<script>
+/*TRAPS*/
+</script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const FILES="abcdefgh";
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+// variations are grouped by label: several move orders can belong to one variation
+TRAPS.forEach(t=>{t.vars=[];t.lines.forEach(l=>{let v=t.vars.indexOf(l.label);if(v<0){v=t.vars.length;t.vars.push(l.label)}l.v=v})});
+const LEVEL=["","Beginner","Intermediate","Advanced"];
+let seen=store.get("trapdoor.v2",{});   // {trapId:[label,...]}
+const filt={q:"",side:"",level:"",todo:""};
+let S=null; // current puzzle state
+let busy=false, animTimer=null, selected=null, hintStage=0;
+
+function lineMoves(l){return l._m||(l._m=l.moves.split(" "))}
+function seenSet(id){return new Set(seen[id]||[])}
+function seenVars(t){const ss=seenSet(t.id);return new Set(t.vars.map((v,i)=>ss.has(v)?i:-1).filter(i=>i>=0))}
+function lastMv(t){const m=t.setup.split(" "),n=m.length,no=Math.ceil(n/2);return n%2?`${no}.${m[n-1]}`:`${no}…${m[n-1]}`}
+function esc(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+/* ---------- library ---------- */
+function matches(t){
+  if(filt.side&&t.side!==filt.side)return false;
+  if(filt.level&&String(t.level)!==filt.level)return false;
+  if(filt.todo&&seenVars(t).size>=t.vars.length)return false;
+  if(filt.q){const q=filt.q.toLowerCase();const solved=seenVars(t).size>0;
+    const hay=(t.opening+" "+t.family+" "+(solved?t.name:"")).toLowerCase();if(!hay.includes(q))return false}
+  return true;
+}
+function renderLib(){
+  let tot=0,got=0;TRAPS.forEach(t=>{tot+=t.vars.length;got+=seenVars(t).size});
+  $("progTxt").textContent=`${got} of ${tot} variations found · ${TRAPS.length} traps`;
+  $("progBar").style.width=(100*got/tot)+"%";
+  const fams=[];TRAPS.forEach((t,i)=>{if(!matches(t))return;let f=fams.find(x=>x.name===t.family);if(!f)fams.push(f={name:t.family,items:[]});f.items.push(i)});
+  if(!fams.length){$("lib").innerHTML=`<p class="empty">No traps match these filters.</p>`;return}
+  $("lib").innerHTML=fams.map(f=>`<div class="grp"><h2>${esc(f.name)} <span style="font-weight:400">· ${f.items.length}</span></h2><ul>${f.items.map(i=>{
+    const t=TRAPS[i],sv=seenVars(t),known=sv.size>0;
+    return `<li><button data-i="${i}" aria-current="${S&&S.ti===i}"><span><span class="op"><i class="side ${t.side}" aria-label="Play as ${t.side==="w"?"White":"Black"}"></i>${esc(known?t.name:t.opening)}</span><span class="sub">${esc(known?t.opening:"after "+lastMv(t))}<span class="lvl">${LEVEL[t.level].toUpperCase()}</span></span></span><span class="pips" aria-label="${sv.size} of ${t.vars.length} variations found">${t.vars.map((_,k)=>`<i class="pip${sv.has(k)?" on":""}"></i>`).join("")}</span></button></li>`}).join("")}</ul></div>`).join("");
+  $("lib").querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{load(+b.dataset.i);if(window.innerWidth<=1060)document.querySelector(".stage").scrollIntoView({behavior:"smooth"})});
+}
+$("q").addEventListener("input",e=>{filt.q=e.target.value.trim();renderLib()});
+document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>{
+  const f=c.dataset.f;
+  if(f==="todo"){filt.todo=filt.todo?"":"1";c.setAttribute("aria-pressed",!!filt.todo)}
+  else{filt[f]=c.dataset.v;document.querySelectorAll(`.chip[data-f="${f}"]`).forEach(o=>o.setAttribute("aria-pressed",o===c))}
+  renderLib();
+});
+$("randomBtn").onclick=()=>{
+  const pool=TRAPS.map((t,i)=>i).filter(i=>matches(TRAPS[i])&&i!==(S&&S.ti));
+  const un=pool.filter(i=>seenVars(TRAPS[i]).size<TRAPS[i].vars.length);
+  const p=un.length?un:pool;if(p.length)load(p[Math.floor(Math.random()*p.length)]);
+};
+
+/* ---------- puzzle flow ---------- */
+function load(ti,opts={}){
+  clearTimeout(animTimer);
+  const t=TRAPS[ti];
+  S={ti,t,game:new Chess(),setup:t.setup.split(" "),played:[],active:t.lines.map((_,i)=>i),done:false,varDone:null,flip:t.side==="b",trapStart:t.setup.split(" ").length,last:null,hintSq:null,force:opts.force,view:null};
+  hintStage=0;selected=null;busy=false;
+  try{history.replaceState(null,"","#"+t.id)}catch(e){}
+  $("opening").textContent=t.opening;
+  const known=seenVars(t).size>0;
+  $("trapname").textContent=known?t.name:"Unknown trap";
+  $("trapname").classList.toggle("hidden",!known);
+  $("meta").innerHTML=`<span><i class="side ${t.side}" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink);background:${t.side==="w"?"#fafaf7":"#1b1b1b"};margin-right:5px"></i>You play ${t.side==="w"?"White":"Black"}</span><span>·</span><span>${LEVEL[t.level]}</span><span>·</span><span>${t.vars.length} variation${t.vars.length>1?"s":""}</span>`;
+  $("idea").hidden=true;$("idea").textContent=t.idea;
+  $("result").classList.remove("show");
+  renderLib();renderVars();
+  if(opts.instant){S.setup.forEach(m=>S.last=S.game.move(m));afterSetup();return}
+  busy=true;setMsg("Playing the opening…");
+  let k=0;
+  S.skipSetup=()=>{clearTimeout(animTimer);while(k<S.setup.length)S.last=S.game.move(S.setup[k++]);S.skipSetup=null;busy=false;afterSetup()};
+  (function step(){
+    if(k>=S.setup.length){S.skipSetup=null;busy=false;afterSetup();return}
+    S.last=S.game.move(S.setup[k++]);render();
+    animTimer=setTimeout(step,S.setup.length>14?260:360);
+  })();
+  render();
+}
+function afterSetup(){render();setMsg(S.force!=null?"Same position. Your opponent will try a different defence.":`Find the trap move for ${S.t.side==="w"?"White":"Black"}.`);}
+
+function setMsg(text,cls){const m=$("msg");m.textContent=text;m.className="msg"+(cls?" "+cls:"")}
+
+function tryMove(from,to,promo){
+  if(busy||S.done||S.view!=null)return;
+  const g=S.game;
+  const legal=g.moves({square:from,verbose:true}).filter(m=>m.to===to);
+  if(!legal.length){selected=null;render();return}
+  if(legal[0].flags.includes("p")&&!promo){askPromo(from,to);return}
+  const mv=g.move({from,to,promotion:promo||"q"});
+  const k=S.played.length;
+  const ok=S.active.filter(i=>lineMoves(S.t.lines[i])[k]===mv.san);
+  selected=null;
+  if(!ok.length){
+    g.undo();render();
+    const box=document.querySelector(".stage");box.classList.remove("flash-bad");void box.offsetWidth;box.classList.add("flash-bad");
+    const soft=(S.t.soft||[]).includes(mv.san)&&k===0;
+    setMsg(soft?`${mv.san} is a decent move, but there's a sharper trap here.`:`${mv.san} isn't the move here. Try again.`,soft?"":"bad");return;
+  }
+  S.active=ok;S.played.push(mv.san);S.last=mv;S.hintSq=null;hintStage=0;
+  render();
+  if(finishIfDone())return;
+  setMsg(k===0?"Correct! Now see how your opponent responds…":"Good. Keep going…","good");
+  busy=true;
+  animTimer=setTimeout(opponentMove,650);
+}
+function opponentMove(){
+  const k=S.played.length, sv=seenVars(S.t);
+  let pool=S.active.filter(i=>!sv.has(S.t.lines[i].v));
+  if(S.force!=null){const f=S.active.filter(i=>S.t.lines[i].v===S.force);if(f.length)pool=f}
+  if(!pool.length)pool=S.active;
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const san=lineMoves(S.t.lines[pick])[k];
+  S.active=S.active.filter(i=>lineMoves(S.t.lines[i])[k]===san);
+  S.last=S.game.move(san);S.played.push(san);busy=false;S.view=null;
+  render();
+  if(finishIfDone())return;
+  const others=new Set(S.active.map(i=>lineMoves(S.t.lines[i])[k+1])).size;
+  setMsg(`${san}. Your move${others>1?" (more than one move works here)":""}.`);
+}
+function finishIfDone(){
+  const k=S.played.length;
+  const fin=S.active.find(i=>lineMoves(S.t.lines[i]).length===k);
+  if(fin==null)return false;
+  const l=S.t.lines[fin];
+  S.done=true;S.varDone=l.v;
+  const set=seenSet(S.t.id);set.add(l.label);seen[S.t.id]=[...set];store.set("trapdoor.v2",seen);
+  $("trapname").textContent=S.t.name;$("trapname").classList.remove("hidden");
+  const mate=S.game.in_checkmate();
+  $("resTitle").innerHTML=mate?"Checkmate!":(l.best?`Well defended<span class="badge">Best defence</span>`:"Trap sprung");
+  $("resNote").textContent=l.note;
+  const left=S.t.vars.length-seenVars(S.t).size;
+  $("nextVarBtn").textContent=left?`Try another variation (${left} left)`:"Replay a variation";
+  $("result").classList.add("show");
+  setMsg(mate?"Checkmate.":l.best?"Your opponent found the best defence.":"You come out clearly ahead.","good");
+  renderVars();renderLib();render();
+  return true;
+}
+function hint(){
+  if(busy||S.done)return;
+  if(S.view!=null){S.view=null;render()}
+  const k=S.played.length;
+  const cand=[...new Set(S.active.map(i=>lineMoves(S.t.lines[i])[k]))];
+  hintStage++;
+  if(hintStage===1){$("idea").hidden=false;setMsg("Here's the idea. Hint again to see which piece moves.");return}
+  const tmp=new Chess(S.game.fen());const mv=tmp.move(cand[0]);
+  if(hintStage===2){S.hintSq=mv.from;render();setMsg("Move the highlighted piece. Hint again to see the move.");return}
+  setMsg(`The move is ${cand.join(" or ")}.`);
+  tryMove(mv.from,mv.to,mv.promotion);
+}
+
+/* ---------- variations + scoresheet ---------- */
+function renderVars(){
+  const t=S.t,sv=seenVars(t);
+  $("vars").innerHTML=t.vars.map((label,i)=>{
+    const d=sv.has(i),l=t.lines.find(x=>x.v===i);
+    return `<li class="${d?"done":"unk"}${S.varDone===i?" now":""}"><span class="ck">${d?"✓":""}</span><span>${d?esc(label)+(l.best?'<span class="badge">Best defence</span>':""):"Variation "+(i+1)+" not found yet"}${d?`<span class="n">${movesText(t,l)}</span>`:""}</span></li>`}).join("");
+}
+function movesText(t,l){
+  const n0=t.setup.split(" ").length;
+  return lineMoves(l).map((m,j)=>{const p=n0+j;const no=Math.floor(p/2)+1;return p%2===0?`${no}.${m}`:(j===0?`${no}…${m}`:m)}).join(" ");
+}
+function renderSheet(){
+  const all=S.game.history();const rows=[];
+  for(let i=0;i<all.length;i+=2){
+    const cur=(S.view==null?all.length:S.view)-1;
+    const c=(j)=>j<all.length?`<span class="mv${j>=S.trapStart?" trap":""}${j===cur?" cur":""}" data-ply="${j+1}" role="button" tabindex="-1">${all[j]}</span>`:"<span></span>";
+    rows.push(`<span class="no">${i/2+1}.</span>${c(i)}${c(i+1)}`)}
+  const sh=$("sheet");sh.innerHTML=rows.join("");sh.scrollTop=sh.scrollHeight;
+}
+
+/* ---------- board ---------- */
+const PC={p:"pawn",n:"knight",b:"bishop",r:"rook",q:"queen",k:"king"};
+function sqName(r,f){return FILES[f]+(8-r)}
+function viewGame(){
+  if(S.view==null)return {g:S.game,last:S.last};
+  const h=S.game.history({verbose:true}),g=new Chess();
+  for(let i=0;i<S.view;i++)g.move(h[i].san);
+  return {g,last:S.view?h[S.view-1]:null};
+}
+function render(){
+  const V=viewGame(),g=V.g,b=$("board");let html="";
+  const dests=selected?g.moves({square:selected,verbose:true}):[];
+  const checkSq=g.in_check()?findKing(g,g.turn()):null;
+  for(let vr=0;vr<8;vr++)for(let vf=0;vf<8;vf++){
+    const r=S.flip?7-vr:vr,f=S.flip?7-vf:vf,sq=sqName(r,f),p=g.get(sq);
+    const cls=["sq",(r+f)%2?"d":""];
+    if(V.last&&(V.last.from===sq||V.last.to===sq))cls.push("last");
+    if(selected===sq)cls.push("sel");
+    if(S.hintSq===sq)cls.push("hint");
+    if(checkSq===sq)cls.push("check");
+    const d=dests.find(m=>m.to===sq);if(d){cls.push("dot");if(d.captured)cls.push("cap")}
+    let inner="";
+    if(vf===0)inner+=`<span class="coord r">${8-r}</span>`;
+    if(vr===7)inner+=`<span class="coord f">${FILES[f]}</span>`;
+    if(p)inner+=`<span class="pc ${PC[p.type]} ${p.color==="w"?"white":"black"}" data-sq="${sq}"></span>`;
+    html+=`<div class="${cls.join(" ")}" data-sq="${sq}" role="gridcell" aria-label="${sq}${p?" "+(p.color==="w"?"white ":"black ")+PC[p.type]:""}"></div>`.replace("></div>",">"+inner+"</div>");
+  }
+  b.innerHTML=html;b.classList.toggle("past",S.view!=null);
+  renderNav();
+  const tw=S.game.turn()==="w";
+  $("turn").innerHTML=S.done?"":`<i class="${tw?"w":"b"}"></i>${tw?"White":"Black"} to move`;
+  renderSheet();
+}
+function findKing(g,c){for(let r=0;r<8;r++)for(let f=0;f<8;f++){const s=sqName(r,f),p=g.get(s);if(p&&p.type==="k"&&p.color===c)return s}}
+function plyLabel(n){if(!n)return "Start";const h=S.game.history(),no=Math.ceil(n/2);return n%2?`${no}.${h[n-1]}`:`${no}…${h[n-1]}`}
+function renderNav(){
+  const total=S.game.history().length,cur=S.view==null?total:S.view,anim=!!S.skipSetup;
+  $("navStart").disabled=$("navPrev").disabled=anim||cur===0;
+  $("navNext").disabled=$("navEnd").disabled=!anim&&cur===total;
+  const p=$("navPos");p.classList.toggle("past",S.view!=null);
+  p.textContent=anim?"Opening…":S.view!=null?`${plyLabel(cur)} · viewing`:(total?`${plyLabel(total)}`:"Start");
+}
+function nav(to){
+  if(S.skipSetup){if(to==="next"||to==="end")S.skipSetup();return}
+  const total=S.game.history().length,cur=S.view==null?total:S.view;
+  let n={start:0,prev:cur-1,next:cur+1,end:total}[to];if(typeof to==="number")n=to;
+  n=Math.max(0,Math.min(total,n));
+  S.view=n===total?null:n;selected=null;
+  document.querySelector(".promo")?.remove();
+  render();
+}
+$("navStart").onclick=()=>nav("start");$("navPrev").onclick=()=>nav("prev");
+$("navNext").onclick=()=>nav("next");$("navEnd").onclick=()=>nav("end");
+$("sheet").addEventListener("click",e=>{const m=e.target.closest("[data-ply]");if(m&&!S.skipSetup)nav(+m.dataset.ply)});
+function mine(sq){const p=S.game.get(sq);return p&&p.color===S.t.side&&S.game.turn()===S.t.side}
+
+/* pointer: click-click and drag */
+let drag=null;
+$("board").addEventListener("pointerdown",e=>{
+  if(S.view!=null){nav("end");return}
+  if(busy||S.done)return;
+  const cell=e.target.closest(".sq");if(!cell)return;const sq=cell.dataset.sq;
+  if(selected&&selected!==sq&&!mine(sq)){tryMove(selected,sq);return}
+  if(!mine(sq)){selected=null;render();return}
+  e.preventDefault();
+  const pc=cell.querySelector(".pc");const rect=cell.getBoundingClientRect();
+  const wasSel=selected===sq;selected=sq;render();
+  const ghost=document.createElement("div");ghost.className="ghost "+pc.className.replace("pc","").trim();
+  ghost.style.width=ghost.style.height=rect.width+"px";
+  drag={from:sq,ghost,size:rect.width,moved:false,wasSel,x0:e.clientX,y0:e.clientY};
+  $("board").setPointerCapture(e.pointerId);
+});
+$("board").addEventListener("pointermove",e=>{
+  if(!drag)return;
+  if(!drag.moved&&Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)<5)return;
+  if(!drag.moved){drag.moved=true;document.body.appendChild(drag.ghost);const p=$("board").querySelector(`.pc[data-sq="${drag.from}"]`);if(p)p.classList.add("drag")}
+  drag.ghost.style.left=(e.clientX-drag.size/2)+"px";drag.ghost.style.top=(e.clientY-drag.size/2)+"px";
+});
+function endDrag(e){
+  if(!drag)return;const d=drag;drag=null;d.ghost.remove();
+  if(!d.moved){if(d.wasSel){selected=null;render()}return}
+  const el=document.elementFromPoint(e.clientX,e.clientY);const cell=el&&el.closest&&el.closest(".sq");
+  if(cell&&cell.dataset.sq!==d.from)tryMove(d.from,cell.dataset.sq);else render();
+}
+$("board").addEventListener("pointerup",endDrag);
+$("board").addEventListener("pointercancel",()=>{if(drag){drag.ghost.remove();drag=null;render()}});
+
+function askPromo(from,to){
+  const col=S.t.side==="w"?"white":"black";
+  const ov=document.createElement("div");ov.className="promo";
+  ov.innerHTML=`<div role="dialog" aria-label="Choose promotion piece">${["q","r","b","n"].map(p=>`<button class="pc-btn ${PC[p]} ${col}" data-p="${p}" aria-label="${PC[p]}"></button>`).join("")}</div>`;
+  ov.addEventListener("click",e=>{const b=e.target.closest("button");ov.remove();if(b)tryMove(from,to,b.dataset.p);else{selected=null;render()}});
+  $("boardbox").appendChild(ov);ov.querySelector("button").focus();
+}
+
+/* ---------- controls ---------- */
+$("hintBtn").onclick=hint;
+$("retryBtn").onclick=()=>load(S.ti,{instant:true});
+$("replayBtn").onclick=()=>load(S.ti);
+$("nextVarBtn").onclick=()=>{
+  const sv=seenVars(S.t);const un=S.t.vars.map((_,i)=>i).filter(i=>!sv.has(i));
+  load(S.ti,{instant:true,force:un.length?un[Math.floor(Math.random()*un.length)]:null});
+};
+$("nextTrapBtn").onclick=()=>{
+  const order=TRAPS.map((t,i)=>i);
+  const next=order.slice(S.ti+1).concat(order.slice(0,S.ti+1)).find(i=>matches(TRAPS[i])&&seenVars(TRAPS[i]).size<TRAPS[i].vars.length&&i!==S.ti);
+  load(next!=null?next:(S.ti+1)%TRAPS.length);
+};
+document.addEventListener("keydown",e=>{
+  if(e.target.closest&&e.target.closest("input,textarea"))return;
+  const k={ArrowLeft:"prev",ArrowRight:"next",Home:"start",End:"end"}[e.key];
+  if(k){e.preventDefault();nav(k);return}
+  if(e.target.closest&&e.target.closest("button"))return;
+  if(e.key==="h")hint();if(e.key==="r")$("retryBtn").click();});
+
+const hashId=(location.hash||"").slice(1);const hi=TRAPS.findIndex(t=>t.id===hashId);
+load(hi>=0?hi:0);
+})();
+</script>
