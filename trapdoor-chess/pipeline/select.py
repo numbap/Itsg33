@@ -5,6 +5,7 @@ import json, chess, sys, collections
 N=int(sys.argv[1]) if len(sys.argv)>1 else 25
 PRIORITY=sys.argv[2].split(",") if len(sys.argv)>2 else ["French_Defense","Kings_Indian_Defense","Indian_Defense","Scandinavian_Defense","Scotch_Game","Italian_Game"]
 CAP=int(sys.argv[3]) if len(sys.argv)>3 else 6
+MAXREP=int(sys.argv[4]) if len(sys.argv)>4 else 1   # how many traps may share one pattern
 trees=json.load(open('data/trees.json'))
 have=set()
 for t in json.load(open('../db/traps.json')):
@@ -47,8 +48,8 @@ for r in sorted(rows,key=lambda r:(fam_rank(r),-r['score'])):
     f=r['o']['family']
     if per[f]>=(CAP if fam_rank(r)<len(PRIORITY) else 2): continue
     sig=signature(r['o']['setup'],r['t']['lines'][0]['moves'])
-    if seen_sig[sig]>=1 and sig[1]!="mate": continue        # pattern already in the database
-    if seen_sig[sig]>=2: continue                            # allow a couple of each mate type
+    if seen_sig[sig]>=MAXREP and sig[1]!="mate": continue   # pattern already in the database enough times
+    if seen_sig[sig]>=MAXREP+1: continue                     # allow one more of each mate type
     seen_sig[sig]+=1
     pick.append(r); per[f]+=1
     if len(pick)>=N: break
