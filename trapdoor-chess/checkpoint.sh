@@ -12,6 +12,6 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_013f4eGseKbt412A68dJa1sX" -- data \
       && for i in 1 2 3 4; do git pull -q --rebase --autostash origin claude/stoic-mccarthy-oddve3 2>/dev/null; git push -q -u origin claude/stoic-mccarthy-oddve3 && break; sleep $((2**i)); done
   fi
-  pgrep -f "rank.py|movefetch.py|vargen.py" >/dev/null || { cp work/data/*.json data/ 2>/dev/null; echo "pipeline finished, last checkpoint $(date +%T)"; exit 0; }
+  pgrep -f "rank.py|movefetch.py|vargen.py" >/dev/null || { for f in rank.json orders.json trees.json selected.json; do [ -f "$SRC/$f" ] && cp "$SRC/$f" data/; done; echo "pipeline finished, last checkpoint $(date +%T)"; exit 0; }
   sleep 1200
 done
