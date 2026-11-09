@@ -3545,5 +3545,301 @@
     "note": "The d5 knight is now loose. Take it with the queen or the f6 knight."
    }
   ]
+ },
+ {
+  "id": "m142",
+  "name": "Queen's Pawn c6 Queen Trap",
+  "opening": "Queen's Pawn Game (Slav setup)",
+  "family": "London & Other 1.d4",
+  "side": "b",
+  "level": 3,
+  "setup": "d4 d5 e3 Nf6 c4 c6 Nc3 dxc4 Bxc4 Bf5 Qb3 e6 Qxb7 Nbd7 Qxc6 Bb4 Bd2",
+  "idea": "White's queen has grabbed two pawns and is deep in your camp. Take away its way home.",
+  "lines": [
+   {
+    "moves": "Bxc3 Bxc3 Be4",
+    "label": "White recaptures on c3",
+    "note": "…Be4 cuts off the queen's retreat. Rc8 next traps it."
+   }
+  ]
+ },
+ {
+  "id": "m143",
+  "name": "Rossolimo Promotion Shot",
+  "opening": "Sicilian Defense (Rossolimo)",
+  "family": "Sicilian",
+  "side": "w",
+  "level": 3,
+  "setup": "e4 c5 Nf3 Nc6 Bb5 d6 d4 Nf6 d5 Qa5+ Nc3 Nxe4",
+  "idea": "Black's knight took e4, attacking c3. Your d-pawn can do more damage first.",
+  "lines": [
+   {
+    "moves": "dxc6 Nxc3 cxb7+ Qxb5 bxa8=Q",
+    "label": "Black takes the bishop",
+    "note": "The pawn captures its way to a8 and promotes."
+   },
+   {
+    "moves": "dxc6 Nxc3 cxb7+ Nxb5+ Bd2",
+    "label": "Black blocks with the knight",
+    "note": "The pawn on b7 is about to promote. Black can't stop it without big losses."
+   },
+   {
+    "moves": "dxc6 Nxc3 cxb7+ Kd8 bxa8=Q",
+    "label": "Black moves the king",
+    "note": "The pawn promotes on a8."
+   },
+   {
+    "moves": "dxc6 bxc6 Bxc6+ Bd7",
+    "label": "Black recaptures on c6",
+    "note": "The bishop takes c6 with check and the a8 rook is next."
+   }
+  ]
+ },
+ {
+  "id": "m145",
+  "name": "Long-Diagonal Discovery",
+  "opening": "Sicilian Defense (2.e5)",
+  "family": "Sicilian",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 c5 e5 Nc6 Nf3 g6 b3 Bg7 Bb2 Qc7 Qe2 d6",
+  "idea": "Black attacked your e5 pawn, but it is blocking your b2 bishop from the g7 bishop.",
+  "lines": [
+   {
+    "moves": "exd6 Qxd6 Bxg7",
+    "label": "Black recaptures with the queen",
+    "note": "The diagonal opens and your bishop takes g7, hitting the h8 rook."
+   },
+   {
+    "moves": "exd6 Bxb2 dxc7",
+    "label": "Black takes your bishop",
+    "note": "The pawn takes the queen on c7."
+   }
+  ]
+ },
+ {
+  "id": "m146",
+  "name": "Caro-Kann b2 Raid",
+  "opening": "Caro-Kann Defense",
+  "family": "Caro-Kann",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 c6 d4 d6 Nf3 Nf6 Nc3 Bg4 h3 Bxf3 Qxf3 Qa5 Bd2 Qb6 Be3",
+  "idea": "White's bishop went back to e3 and left b2 and c3 under-defended.",
+  "lines": [
+   {
+    "moves": "Qxb2 Rb1 Qxc3+ Bd2",
+    "label": "White plays Rb1",
+    "note": "Take on c3 with check. You're two pawns and a knight up."
+   },
+   {
+    "moves": "Qxb2 Rb1 Qxc3+ Kd1",
+    "label": "White plays Rb1",
+    "note": "Take on c3 with check. You're two pawns and a knight up."
+   },
+   {
+    "moves": "Qxb2 Rd1 Qxc3+ Bd2",
+    "label": "White plays Rd1",
+    "note": "Take on c3 with check. You've won a knight."
+   },
+   {
+    "moves": "Qxb2 Rd1 Qxc3+ Rd2",
+    "label": "White plays Rd1",
+    "note": "Take on c3 with check. You've won a knight."
+   },
+   {
+    "moves": "Qxb2 Qd1 Qxc3+ Bd2 Qxd4",
+    "label": "White's queen guards c3",
+    "note": "You collect c3 and d4 as well."
+   },
+   {
+    "moves": "Qxb2 Qd1 Qxc3+ Ke2",
+    "label": "White's queen guards c3",
+    "note": "Take on c3 with check. You're well ahead."
+   },
+   {
+    "moves": "Qxb2 Kd2 Qxa1",
+    "label": "The king defends c3",
+    "note": "Take the a1 rook instead."
+   }
+  ]
+ },
+ {
+  "id": "m147",
+  "name": "Scandinavian Advance Fork",
+  "opening": "Scandinavian Defense (2.e5)",
+  "family": "Scandinavian",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 d5 e5 c5 Nf3 Nc6 d4 Bg4 c3 cxd4 Bb5 dxc3 Nxc3 e6 O-O a6",
+  "idea": "Black's bishop on g4 is undefended. A trade on c6 lets your queen hit two things.",
+  "lines": [
+   {
+    "moves": "Bxc6+ bxc6 Qa4",
+    "label": "Black recaptures",
+    "note": "Qa4 hits the c6 pawn and the loose g4 bishop at once. One of them falls."
+   }
+  ]
+ },
+ {
+  "id": "m148",
+  "name": "Icelandic f2 Raid",
+  "opening": "Scandinavian Defense (Icelandic-Palme Gambit)",
+  "family": "Scandinavian",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 d5 exd5 Nf6 c4 e6 dxe6 Bxe6 b3 Qd4 Nc3 Bc5 Qe2 Ne4 Qxe4",
+  "idea": "White's queen took your knight and left f2 defended only by the king.",
+  "lines": [
+   {
+    "moves": "Qxf2+ Kd1 Qxf1+ Kc2 Nc6",
+    "label": "The king runs to c2",
+    "note": "Your queen and bishops tear the white king's position apart."
+   },
+   {
+    "moves": "Qxf2+ Kd1 Qxf1+ Qe1 Qxg2",
+    "label": "White blocks with the queen",
+    "note": "You pick up g2 and the h1 rook is next."
+   }
+  ]
+ },
+ {
+  "id": "m149",
+  "name": "Scandinavian Queen-Trade Fork",
+  "opening": "Scandinavian Defense (Main Line)",
+  "family": "Scandinavian",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 d5 exd5 Qxd5 Nc3 Qa5 d4 Nf6 Qd3 Bg4 Bd2 c6 Qg3 Nbd7 Nb5",
+  "idea": "White's knight hit your queen, but the white queen on g3 is within a knight's reach of e4.",
+  "lines": [
+   {
+    "moves": "Qxd2+ Kxd2 Ne4+ Ke1 Nxg3",
+    "label": "White recaptures with the king",
+    "note": "Give the queen on d2, then Ne4+ forks king and queen."
+   }
+  ]
+ },
+ {
+  "id": "m150",
+  "name": "Modern b2 Queen Trap",
+  "opening": "Modern Defense (Averbakh)",
+  "family": "Other 1.e4",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 d6 d4 g6 c4 Bg7 Nc3 c6 Nf3 Bg4 Be3 Qb6 a3 Qxb2",
+  "idea": "Black's queen grabbed b2. How does it get back out?",
+  "lines": [
+   {
+    "moves": "Na4 Bxf3 gxf3",
+    "label": "Black trades on f3",
+    "note": "The queen is still trapped on b2."
+   },
+   {
+    "moves": "Na4 Qxa1 Qxa1",
+    "label": "The queen takes the rook",
+    "note": "It gets only a rook for itself."
+   }
+  ]
+ },
+ {
+  "id": "m153",
+  "name": "Paris Back-Rank Mate",
+  "opening": "Italian Game (Paris Defense)",
+  "family": "Open Games",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 d6 d4 Bg4 dxe5 dxe5 Qxd8+ Rxd8 c3 Nf6 Ng5",
+  "idea": "White traded queens and then went after f7. Look at the d-file instead.",
+  "lines": [
+   {
+    "moves": "Rd1#",
+    "label": "Mate",
+    "note": "The rook mates on d1: your g4 bishop covers e2 and d1."
+   }
+  ]
+ },
+ {
+  "id": "m157",
+  "name": "Closed Sicilian Defender Swap",
+  "opening": "Sicilian Defense (Closed)",
+  "family": "Sicilian",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 c5 Nc3 Nc6 g3 Nf6 Bg2 e6 Nge2 d5 exd5 exd5 d3 d4 Ne4 Be7 O-O O-O Nf4 Bg4",
+  "idea": "Black's g4 bishop is attacked by your queen once one knight moves.",
+  "lines": [
+   {
+    "moves": "Nxf6+ Bxf6 Qxg4",
+    "label": "Black recaptures",
+    "note": "The knight trade uncovers your queen on g4. A clean piece up."
+   }
+  ]
+ },
+ {
+  "id": "m158",
+  "name": "Pelikan Queen Sacrifice Fork",
+  "opening": "Sicilian Defense (Pelikan)",
+  "family": "Sicilian",
+  "side": "b",
+  "level": 3,
+  "setup": "e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 Nf6 Nc3 e5 Nf5 Bb4 Nd6+ Bxd6 Qxd6 Qa5 Bd2 Nd4 Nd5",
+  "idea": "White's queen on d6 and king on e1 are both within reach of a knight on e4.",
+  "lines": [
+   {
+    "moves": "Qxd2+ Kxd2 Nxe4+ Kc1 Nxd6",
+    "label": "The king goes to c1",
+    "note": "Give your queen, then the knight fork wins White's."
+   },
+   {
+    "moves": "Qxd2+ Kxd2 Nxe4+ Kd3 Nxd6",
+    "label": "The king goes to d3",
+    "note": "Give your queen, then the knight fork wins White's."
+   }
+  ]
+ },
+ {
+  "id": "m159",
+  "name": "Closed Sicilian Royal Fork",
+  "opening": "Sicilian Defense (Closed)",
+  "family": "Sicilian",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 c5 Nc3 Nc6 Nf3 d6 Bb5 Qb6 Nd5 Qxb5",
+  "idea": "Black's queen took your bishop. Its king and queen are now a knight's fork apart.",
+  "lines": [
+   {
+    "moves": "Nc7+ Kd7 Nxb5",
+    "label": "The king steps to d7",
+    "note": "The knight forks king and queen."
+   },
+   {
+    "moves": "Nc7+ Kd8 Nxb5",
+    "label": "The king steps to d8",
+    "note": "The knight forks king and queen."
+   }
+  ]
+ },
+ {
+  "id": "m160",
+  "name": "Taimanov f2 Mate Threat",
+  "opening": "Sicilian Defense (Taimanov)",
+  "family": "Sicilian",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 c5 Nf3 Nc6 Nc3 e6 d4 cxd4 Nxd4 Bc5 Ndb5 Qb6 Na4",
+  "idea": "White's knight attacked your queen, but f2 and the white king are wide open.",
+  "lines": [
+   {
+    "moves": "Bxf2+ Ke2 Qxb5+ Kxf2 Qxa4",
+    "label": "The king steps to e2",
+    "note": "The checks win both white knights."
+   },
+   {
+    "moves": "Bxf2+ Kd2 Qe3#",
+    "label": "The king steps to d2",
+    "note": "Queen to e3 is mate."
+   }
+  ]
  }
 ]
