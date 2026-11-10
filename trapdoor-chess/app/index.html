@@ -44,6 +44,9 @@ h1 span{color:var(--accent)}
 .chip{all:unset;box-sizing:border-box;font:500 12px/1 var(--body);padding:6px 9px;border-radius:999px;border:1px solid var(--line);cursor:pointer;color:var(--muted)}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.check{display:inline-flex;align-items:center;gap:8px;font:500 14px/1 var(--body);color:var(--ink);cursor:pointer;width:fit-content}
+.check input{width:16px;height:16px;margin:0;accent-color:var(--good);cursor:pointer}
+.check input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .libscroll{overflow:auto;min-height:0;padding-right:4px}
 @media (max-width:1060px){.libscroll{overflow:visible}}
 .empty{color:var(--muted);font-size:13px;padding:8px 10px}
@@ -172,10 +175,7 @@ footer{margin-top:28px;color:var(--muted);font-size:12px}
           <button class="chip" data-f="side" data-v="w" aria-pressed="false">As White</button>
           <button class="chip" data-f="side" data-v="b" aria-pressed="false">As Black</button>
         </div>
-        <div class="chips">
-          <button class="chip" data-f="todo" data-v="1" aria-pressed="false">Unfinished only</button>
-          <button class="chip" id="randomBtn">Random trap</button>
-        </div>
+        <label class="check" for="unsolved"><input type="checkbox" id="unsolved"> Unsolved</label>
       </div>
       <div class="libscroll"><div class="grps" id="lib"></div></div>
     </nav>
@@ -292,15 +292,16 @@ function renderLib(){
 $("q").addEventListener("input",e=>{filt.q=e.target.value.trim();renderLib()});
 document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>{
   const f=c.dataset.f;
-  if(f==="todo"){filt.todo=filt.todo?"":"1";c.setAttribute("aria-pressed",!!filt.todo)}
-  else{filt[f]=c.dataset.v;document.querySelectorAll(`.chip[data-f="${f}"]`).forEach(o=>o.setAttribute("aria-pressed",o===c))}
+  filt[f]=c.dataset.v;document.querySelectorAll(`.chip[data-f="${f}"]`).forEach(o=>o.setAttribute("aria-pressed",o===c));
   renderLib();
 });
-$("randomBtn").onclick=()=>{
+// "Unsolved" off (default): every trap is listed and Next trap picks at random from all of them.
+// On: only traps with variations still to find are listed and picked.
+$("unsolved").addEventListener("change",e=>{filt.todo=e.target.checked?"1":"";renderLib()});
+function randomTrap(){
   const pool=TRAPS.map((t,i)=>i).filter(i=>matches(TRAPS[i])&&i!==(S&&S.ti));
-  const un=pool.filter(i=>seenVars(TRAPS[i]).size<TRAPS[i].vars.length);
-  const p=un.length?un:pool;if(p.length)load(p[Math.floor(Math.random()*p.length)]);
-};
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
+}
 
 /* ---------- puzzle flow ---------- */
 function load(ti,opts={}){
@@ -524,9 +525,9 @@ $("nextVarBtn").onclick=()=>{
   load(S.ti,{instant:true,force:un.length?un[Math.floor(Math.random()*un.length)]:null});
 };
 $("nextTrapBtn").onclick=()=>{
-  const order=TRAPS.map((t,i)=>i);
-  const next=order.slice(S.ti+1).concat(order.slice(0,S.ti+1)).find(i=>matches(TRAPS[i])&&seenVars(TRAPS[i]).size<TRAPS[i].vars.length&&i!==S.ti);
-  load(next!=null?next:(S.ti+1)%TRAPS.length);
+  const n=randomTrap();
+  if(n==null){setMsg(filt.todo?"You've solved every trap that matches. Untick Unsolved to replay them.":"No other traps match your filters.");return}
+  load(n);
 };
 document.addEventListener("keydown",e=>{
   if(e.target.closest&&e.target.closest("input,textarea"))return;
@@ -536,6 +537,6 @@ document.addEventListener("keydown",e=>{
   if(e.key==="h")hint();if(e.key==="r")$("retryBtn").click();});
 
 const hashId=(location.hash||"").slice(1);const hi=TRAPS.findIndex(t=>t.id===hashId);
-load(hi>=0?hi:0);
+load(hi>=0?hi:Math.floor(Math.random()*TRAPS.length));
 })();
 </script>
