@@ -53,7 +53,17 @@ h1 span{color:var(--accent)}
 .badge{display:inline-block;font:600 10px/1.4 var(--body);text-transform:uppercase;letter-spacing:.08em;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:2px}
 .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:2px}
 .lib h2,.panel h2{font-family:var(--body);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 8px}
-.lib .grp{margin-bottom:18px}
+.lib .grp{margin-bottom:6px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.lib summary{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;list-style:none;padding:8px 10px;border-radius:6px;font:600 15px/1.2 var(--mono);color:var(--ink)}
+.lib summary::-webkit-details-marker{display:none}
+.lib summary::before{content:"";width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;flex:none;margin-right:2px}
+.lib details[open]>summary::before{transform:rotate(45deg)}
+.lib summary .mv1{flex:1}
+.lib summary:hover{background:var(--surface)}
+.lib summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.lib .cnt{font:500 12px/1 var(--body);color:var(--muted)}
+.lib h3{display:flex;justify-content:space-between;margin:10px 10px 4px 28px;font:600 12px/1.2 var(--mono);color:var(--muted)}
+.lib details ul{margin-left:18px}
 .lib ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
 @media (max-width:1060px){.lib .grps{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}}
 @media (max-width:560px){.lib .grps{grid-template-columns:1fr}}
@@ -156,17 +166,11 @@ footer{margin-top:28px;color:var(--muted);font-size:12px}
       <div class="libhead">
         <div class="progress"><span id="progTxt"></span><div class="bar"><i id="progBar"></i></div></div>
         <label for="q" class="eyebrow">Find a trap</label>
-        <input id="q" type="search" placeholder="Opening or trap name" autocomplete="off">
+        <input id="q" type="search" placeholder="Opening, trap name or moves (e.g. e4 c5)" autocomplete="off">
         <div class="chips" role="group" aria-label="Side">
           <button class="chip" data-f="side" data-v="" aria-pressed="true">Both sides</button>
           <button class="chip" data-f="side" data-v="w" aria-pressed="false">As White</button>
           <button class="chip" data-f="side" data-v="b" aria-pressed="false">As Black</button>
-        </div>
-        <div class="chips" role="group" aria-label="Difficulty">
-          <button class="chip" data-f="level" data-v="" aria-pressed="true">All levels</button>
-          <button class="chip" data-f="level" data-v="1" aria-pressed="false">Beginner</button>
-          <button class="chip" data-f="level" data-v="2" aria-pressed="false">Intermediate</button>
-          <button class="chip" data-f="level" data-v="3" aria-pressed="false">Advanced</button>
         </div>
         <div class="chips">
           <button class="chip" data-f="todo" data-v="1" aria-pressed="false">Unfinished only</button>
@@ -243,7 +247,8 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v)
 TRAPS.forEach(t=>{t.vars=[];t.lines.forEach(l=>{let v=t.vars.indexOf(l.label);if(v<0){v=t.vars.length;t.vars.push(l.label)}l.v=v})});
 const LEVEL=["","Beginner","Intermediate","Advanced"];
 let seen=store.get("trapdoor.v2",{});   // {trapId:[label,...]}
-const filt={q:"",side:"",level:"",todo:""};
+const filt={q:"",side:"",todo:""};
+const openGroups=new Set(store.get("trapdoor.open",[]));
 let S=null; // current puzzle state
 let busy=false, animTimer=null, selected=null, hintStage=0;
 
@@ -256,21 +261,32 @@ function esc(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;","
 /* ---------- library ---------- */
 function matches(t){
   if(filt.side&&t.side!==filt.side)return false;
-  if(filt.level&&String(t.level)!==filt.level)return false;
   if(filt.todo&&seenVars(t).size>=t.vars.length)return false;
   if(filt.q){const q=filt.q.toLowerCase();const solved=seenVars(t).size>0;
-    const hay=(t.opening+" "+t.family+" "+(solved?t.name:"")).toLowerCase();if(!hay.includes(q))return false}
+    const hay=(t.opening+" "+t.family+" "+(solved?t.name:"")+" "+t.setup).toLowerCase();if(!hay.includes(q))return false}
   return true;
 }
 function renderLib(){
   let tot=0,got=0;TRAPS.forEach(t=>{tot+=t.vars.length;got+=seenVars(t).size});
   $("progTxt").textContent=`${got} of ${tot} variations found · ${TRAPS.length} traps`;
   $("progBar").style.width=(100*got/tot)+"%";
-  const fams=[];TRAPS.forEach((t,i)=>{if(!matches(t))return;let f=fams.find(x=>x.name===t.family);if(!f)fams.push(f={name:t.family,items:[]});f.items.push(i)});
-  if(!fams.length){$("lib").innerHTML=`<p class="empty">No traps match these filters.</p>`;return}
-  $("lib").innerHTML=fams.map(f=>`<div class="grp"><h2>${esc(f.name)} <span style="font-weight:400">· ${f.items.length}</span></h2><ul>${f.items.map(i=>{
-    const t=TRAPS[i],sv=seenVars(t),known=sv.size>0;
-    return `<li><button data-i="${i}" aria-current="${S&&S.ti===i}"><span><span class="op"><i class="side ${t.side}" aria-label="Play as ${t.side==="w"?"White":"Black"}"></i>${esc(known?t.name:t.opening)}</span><span class="sub">${esc(known?t.opening:"after "+lastMv(t))}<span class="lvl">${LEVEL[t.level].toUpperCase()}</span></span></span><span class="pips" aria-label="${sv.size} of ${t.vars.length} variations found">${t.vars.map((_,k)=>`<i class="pip${sv.has(k)?" on":""}"></i>`).join("")}</span></button></li>`}).join("")}</ul></div>`).join("");
+  // Group by each side's first move (1.e4 e5), then by the second move (2.Nf3 Nc6).
+  const top=new Map();
+  TRAPS.forEach((t,i)=>{if(!matches(t))return;const m=t.setup.split(" ");
+    const k1="1."+m[0]+(m[1]?" "+m[1]:""), k2=m.length>2?"2."+m[2]+(m[3]?" "+m[3]:""):"";
+    if(!top.has(k1))top.set(k1,new Map());const sub=top.get(k1);if(!sub.has(k2))sub.set(k2,[]);sub.get(k2).push(i)});
+  if(!top.size){$("lib").innerHTML=`<p class="empty">No traps match these filters.</p>`;return}
+  const count=sub=>[...sub.values()].reduce((n,a)=>n+a.length,0);
+  const groups=[...top.entries()].sort((x,y)=>count(y[1])-count(x[1])||x[0].localeCompare(y[0]));
+  const cur=S?TRAPS[S.ti].setup.split(" "):null, curKey=cur?"1."+cur[0]+(cur[1]?" "+cur[1]:""):"";
+  const item=i=>{const t=TRAPS[i],sv=seenVars(t),known=sv.size>0;
+    return `<li><button data-i="${i}" aria-current="${S&&S.ti===i}"><span><span class="op"><i class="side ${t.side}" aria-label="Play as ${t.side==="w"?"White":"Black"}"></i>${esc(known?t.name:t.opening)}</span><span class="sub">${esc(known?t.opening:"after "+lastMv(t))}<span class="lvl">${LEVEL[t.level].toUpperCase()}</span></span></span><span class="pips" aria-label="${sv.size} of ${t.vars.length} variations found">${t.vars.map((_,k)=>`<i class="pip${sv.has(k)?" on":""}"></i>`).join("")}</span></button></li>`};
+  $("lib").innerHTML=groups.map(([k1,sub])=>{
+    const open=filt.q||openGroups.has(k1)||k1===curKey;
+    const subs=[...sub.entries()].sort((x,y)=>y[1].length-x[1].length||x[0].localeCompare(y[0]));
+    return `<details class="grp" data-g="${esc(k1)}"${open?" open":""}><summary><span class="mv1">${esc(k1)}</span><span class="cnt">${count(sub)}</span></summary>${subs.map(([k2,ids])=>`${k2?`<h3><span>${esc(k2)}</span><span class="cnt">${ids.length}</span></h3>`:""}<ul>${ids.map(item).join("")}</ul>`).join("")}</details>`}).join("");
+  $("lib").querySelectorAll("details.grp").forEach(d=>d.addEventListener("toggle",()=>{
+    if(filt.q)return; if(d.open)openGroups.add(d.dataset.g); else openGroups.delete(d.dataset.g); store.set("trapdoor.open",[...openGroups])}));
   $("lib").querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{load(+b.dataset.i);if(window.innerWidth<=1060)document.querySelector(".stage").scrollIntoView({behavior:"smooth"})});
 }
 $("q").addEventListener("input",e=>{filt.q=e.target.value.trim();renderLib()});
