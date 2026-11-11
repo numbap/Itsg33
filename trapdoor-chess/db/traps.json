@@ -4664,5 +4664,269 @@
     "note": "The trade removed the bishop's defender. You win a piece."
    }
   ]
+ },
+ {
+  "id": "w001",
+  "name": "Busch–Gass Pawn Grab",
+  "opening": "King's Pawn (Busch–Gass Gambit)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Bc5",
+  "idea": "Black developed the bishop and left e5 undefended. Club players do this in hundreds of thousands of games.",
+  "lines": [
+   {
+    "moves": "Nxe5 Qh4 d4",
+    "label": "Black hits f2 with the queen",
+    "note": "d4 cuts the bishop off from f2 and attacks it. Your extra pawn is safe."
+   },
+   {
+    "moves": "Nxe5 Bxf2+ Kxf2",
+    "label": "Black tries the f2 desperado",
+    "note": "Just take it. Black has given a bishop for two pawns."
+   },
+   {
+    "moves": "Nxe5 Nf6 d4",
+    "label": "Black develops",
+    "note": "Kick the bishop with d4. You're a clean pawn up."
+   },
+   {
+    "moves": "Nxe5 d6 Nf3",
+    "label": "Black kicks the knight",
+    "note": "Retreat to f3. You keep the extra pawn."
+   }
+  ]
+ },
+ {
+  "id": "w002",
+  "name": "Knight Trapped on d4",
+  "opening": "King's Pawn (Centre Game with d5)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 d4 Nc6 d5 Nd4",
+  "idea": "Black's knight jumped to d4, deep in your half, with very few squares.",
+  "lines": [
+   {
+    "moves": "c3 Nb5 Bxb5",
+    "label": "The knight runs to b5",
+    "note": "The bishop takes it. You've won a piece."
+   },
+   {
+    "moves": "c3 Bc5 cxd4",
+    "label": "Black defends the knight",
+    "note": "Take it anyway. The bishop's support doesn't save it."
+   },
+   {
+    "moves": "c3 Qh4",
+    "label": "Black counterattacks",
+    "note": "Cover e4 with Bd3 or Nd2. The knight on d4 is still trapped and falls next."
+   },
+   {
+    "moves": "c3 c5",
+    "label": "Black defends with ...c5",
+    "note": "The knight still has no way out. Take it now or develop first: it's lost either way."
+   }
+  ]
+ },
+ {
+  "id": "w003",
+  "name": "Early Queen Rook Fork",
+  "opening": "King's Pawn (Wayward Queen Attack)",
+  "family": "Other 1.e4",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Qh5 g6",
+  "idea": "Black kicked your queen with ...g6, but the e5 pawn is undefended and the h8 rook is behind it.",
+  "lines": [
+   {
+    "moves": "Qxe5+ Qe7 Qxh8",
+    "label": "Black blocks with the queen",
+    "note": "The queen takes e5 with check, then the h8 rook."
+   },
+   {
+    "moves": "Qxe5+ Be7 Qxh8",
+    "label": "Black blocks with the bishop",
+    "note": "The queen takes e5 with check, then the h8 rook."
+   },
+   {
+    "moves": "Qxe5+ Ne7 Qxh8",
+    "label": "Black blocks with the knight",
+    "note": "The queen takes e5 with check, then the h8 rook."
+   }
+  ]
+ },
+ {
+  "id": "w004",
+  "name": "Larsen e5 Grab",
+  "opening": "Nimzo-Larsen Attack",
+  "family": "Flank Openings",
+  "side": "w",
+  "level": 1,
+  "setup": "b3 e5 Bb2 Bc5",
+  "idea": "Your b2 bishop already hits e5, and Black's last move didn't defend it.",
+  "lines": [
+   {
+    "moves": "Bxe5 Bxf2+ Kxf2",
+    "label": "Black tries the f2 desperado",
+    "note": "Take the bishop. You're a piece up."
+   },
+   {
+    "moves": "Bxe5 Nf6 Bb2",
+    "label": "Black develops",
+    "note": "You're a pawn up and the long diagonal still points at g7."
+   },
+   {
+    "moves": "Bxe5 d6 Bxg7",
+    "label": "Black kicks the bishop",
+    "note": "It takes g7 instead and the h8 rook is next."
+   },
+   {
+    "moves": "Bxe5 f6",
+    "label": "Black blocks the diagonal",
+    "note": "Retreat the bishop to b2, c3 or g3. You're a clean pawn up and Black's kingside is weakened."
+   }
+  ]
+ },
+ {
+  "id": "w005",
+  "name": "Hanging Queen on d8",
+  "opening": "Queen's Pawn (Pseudo-Trompowsky)",
+  "family": "London & Other 1.d4",
+  "side": "w",
+  "level": 1,
+  "setup": "d4 d5 Bg5 e6",
+  "idea": "Black's last pawn move opened a diagonal you're already standing on.",
+  "lines": [
+   {
+    "moves": "Bxd8 Kxd8",
+    "label": "Black recaptures",
+    "note": "...e6 opened the d8–g5 diagonal. You've won the queen for a bishop."
+   }
+  ]
+ },
+ {
+  "id": "w006",
+  "name": "Scandinavian Long-Diagonal Fork",
+  "opening": "Scandinavian Defense",
+  "family": "Scandinavian",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 d5 exd5 Nf6 Nc3 Nxd5 Nxd5 Qxd5 b3",
+  "idea": "White's b3 left the a1 rook on the long diagonal, and your queen is already centralised.",
+  "lines": [
+   {
+    "moves": "Qe5+ Be2 Qxa1",
+    "label": "White blocks with the bishop",
+    "note": "The check forks the king and the a1 rook."
+   },
+   {
+    "moves": "Qe5+ Qe2 Qxa1",
+    "label": "White blocks with the queen",
+    "note": "The check forks the king and the a1 rook."
+   },
+   {
+    "moves": "Qe5+ Ne2 Qxa1",
+    "label": "White blocks with the knight",
+    "note": "The check forks the king and the a1 rook."
+   }
+  ]
+ },
+ {
+  "id": "w007",
+  "name": "Advance French b2 Raid",
+  "opening": "French Defense (Advance)",
+  "family": "French",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 e6 d4 d5 e5 c5 c3 Nc6 Nf3 Qb6 Be3",
+  "idea": "White's bishop went to e3 and left b2 defended by nothing.",
+  "lines": [
+   {
+    "moves": "Qxb2 Nbd2 c4",
+    "label": "White develops",
+    "note": "You're a pawn up and ...c4 keeps White's queenside tied up."
+   },
+   {
+    "moves": "Qxb2 Qb3 Qxa1 dxc5",
+    "label": "Best defence: White hunts your queen",
+    "note": "Your queen took the a1 rook before it could be caught. White will win it back, but you stay about a pawn ahead.",
+    "best": true
+   }
+  ]
+ },
+ {
+  "id": "w008",
+  "name": "Englund c3 Block",
+  "opening": "Englund Gambit",
+  "family": "London & Other 1.d4",
+  "side": "b",
+  "level": 1,
+  "setup": "d4 e5 dxe5 Nc6 Nf3 Qe7 Bf4 Qb4+ c3",
+  "idea": "White blocked your check with a pawn. What did that leave unguarded?",
+  "lines": [
+   {
+    "moves": "Qxf4 e3 Qf5",
+    "label": "White kicks the queen",
+    "note": "You're a clean piece up."
+   },
+   {
+    "moves": "Qxf4 Nbd2 Nxe5",
+    "label": "White develops",
+    "note": "You've won a piece and the e5 pawn too."
+   },
+   {
+    "moves": "Qxf4 g3",
+    "label": "White kicks the queen",
+    "note": "Retreat the queen to f5 or h6. You're a clean piece up."
+   }
+  ]
+ },
+ {
+  "id": "w009",
+  "name": "Englund Qd2 Block",
+  "opening": "Englund Gambit",
+  "family": "London & Other 1.d4",
+  "side": "b",
+  "level": 2,
+  "setup": "d4 e5 dxe5 Nc6 Nf3 Qe7 Bf4 Qb4+ Qd2",
+  "idea": "White blocked with the queen, so b2 has no defender.",
+  "lines": [
+   {
+    "moves": "Qxb2 Qc3 Bb4",
+    "label": "White offers a queen trade",
+    "note": "Bb4 pins the queen to the king. White loses it."
+   },
+   {
+    "moves": "Qxb2 c3 Qxa1",
+    "label": "White defends the queen",
+    "note": "Take the a1 rook."
+   }
+  ]
+ },
+ {
+  "soft": [
+   "Qxd5"
+  ],
+  "id": "w010",
+  "name": "Fried Liver: ...Ke7",
+  "opening": "Two Knights Defense (Fried Liver)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 3,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Nxd5 Nxf7 Kxf7 Qf3+ Ke7",
+  "idea": "Black's king stepped up to e7, right in front of your pieces. Start with the d5 knight.",
+  "lines": [
+   {
+    "moves": "Bxd5 Nd4 Qf7+ Kd6",
+    "label": "Black attacks your queen",
+    "note": "Qf7+ drives the king out to d6. Bring in more attackers (Na3 or Be4) and it won't survive."
+   },
+   {
+    "moves": "Bxd5 Be6 Bxc6",
+    "label": "Black blocks with the bishop",
+    "note": "Take the c6 knight too. You've won back the piece with interest."
+   }
+  ]
  }
 ]
