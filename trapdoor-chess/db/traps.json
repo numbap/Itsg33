@@ -4569,5 +4569,100 @@
     "note": "The check drags the king away and your queen takes Black's."
    }
   ]
+ },
+ {
+  "id": "l001",
+  "name": "Fried Liver: King Back to e8",
+  "opening": "Two Knights Defense (Fried Liver)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Nxd5 Nxf7 Kxf7 Qf3+ Ke8",
+  "idea": "Black's king ran back to e8. The d5 knight has lost a defender and f7 is wide open.",
+  "lines": [
+   {
+    "moves": "Bxd5 Nd4 Qf7#",
+    "label": "Black attacks your queen",
+    "note": "Ignore it: queen to f7 is mate."
+   },
+   {
+    "moves": "Bxd5 Qf6 Bxc6+ bxc6",
+    "label": "Black offers a queen trade",
+    "note": "Take on c6 with check first. You've won a whole knight."
+   }
+  ]
+ },
+ {
+  "id": "l002",
+  "name": "King's Gambit ...Nc6 Fork",
+  "opening": "King's Gambit Declined",
+  "family": "Open Games",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 f4 Nc6 fxe5",
+  "idea": "White took on e5 and left the e1–h4 diagonal open.",
+  "lines": [
+   {
+    "moves": "Qh4+ g3 Qxe4+ Qe2 Qxh1",
+    "label": "White blocks with g3",
+    "note": "The queen check forks king and the h1 rook."
+   }
+  ]
+ },
+ {
+  "id": "l003",
+  "name": "Fried Liver: ...Qf6 Block",
+  "opening": "Two Knights Defense (Fried Liver)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Nxd5 Nxf7 Kxf7 Qf3+ Qf6",
+  "idea": "Black blocked the check with the queen, but the d5 knight now has only one defender.",
+  "lines": [
+   {
+    "moves": "Bxd5+ Be6 Bxc6",
+    "label": "Black blocks with the bishop",
+    "note": "Take the c6 knight too. You've won back the piece with interest."
+   },
+   {
+    "moves": "Bxd5+ Ke8 Bxc6+ bxc6",
+    "label": "The king goes back to e8",
+    "note": "Take on c6 with check. You're a piece and two pawns up."
+   }
+  ]
+ },
+ {
+  "id": "l004",
+  "name": "Two Knights Pawn Fork",
+  "opening": "Two Knights Defense",
+  "family": "Open Games",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Nxe4 Nxe4",
+  "idea": "White took your knight on e4. One pawn move hits both white pieces.",
+  "lines": [
+   {
+    "moves": "d5 Bb5 dxe4",
+    "label": "White saves the bishop",
+    "note": "The pawn forked bishop and knight. You win your piece back and end up a pawn ahead."
+   }
+  ]
+ },
+ {
+  "id": "l005",
+  "name": "Scotch Knight Swap",
+  "opening": "Scotch Game",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5 Be3 Nf6",
+  "idea": "Black's c5 bishop is defended only by the c6 knight. Remove that knight.",
+  "lines": [
+   {
+    "moves": "Nxc6 bxc6 Bxc5",
+    "label": "Black recaptures",
+    "note": "The trade removed the bishop's defender. You win a piece."
+   }
+  ]
  }
 ]
