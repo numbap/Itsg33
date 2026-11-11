@@ -11,9 +11,14 @@ Memory stays bounded with lossy counting: every PRUNE_EVERY games, sequences dee
 KEEP_DEPTH that are still at a count of 1 are dropped. A sequence that is genuinely popular
 loses at most one count per pruning round, far below the MIN_OUT threshold used for output.
 
+A dropped connection or a truncated file simply ends the input: the counts so far are saved.
+--input reads a downloaded file instead of stdin, and --merge adds the counts of an earlier
+tree.json, so several months (or a stream plus a download) can be combined.
+
 Usage:
   curl -s https://database.lichess.org/standard/lichess_db_standard_rated_2026-10.pgn.zst \
     | python tree.py --max-games 40000000 --out data/tree.json
+  python tree.py --input data/2026-09.pgn.zst --merge data/tree.json --out data/tree_merged.json
 """
 import argparse, io, json, re, sys, time
 import zstandard
@@ -27,6 +32,8 @@ ap.add_argument("--min-out", type=int, default=200, help="only write sequences s
 ap.add_argument("--prune-every", type=int, default=500_000)
 ap.add_argument("--keep-depth", type=int, default=6, help="never prune sequences this short or shorter")
 ap.add_argument("--out", default="data/tree.json")
+ap.add_argument("--input", default="-", help="a .pgn.zst file to read instead of stdin")
+ap.add_argument("--merge", default="", help="add the counts from this earlier tree.json")
 a = ap.parse_args()
 
 COMMENT = re.compile(r"\{[^}]*\}")
@@ -36,6 +43,10 @@ SPEEDS = ("Blitz", "Rapid", "Classical")
 
 counts = {}
 games_read = games_kept = 0
+merged_meta = {}
+if a.merge:
+    prev = json.load(open(a.merge))
+    counts.update(prev["counts"]); merged_meta = prev.get("meta", {})
 t0 = time.time()
 
 def flush_progress(final=False):
@@ -44,15 +55,22 @@ def flush_progress(final=False):
           f"sequences {len(counts):,} ({rate:,.0f} games/s)", file=sys.stderr, flush=True)
 
 def prune():
-    dead = [k for k, v in counts.items() if v <= 1 and k.count(" ") >= a.keep_depth]
+    dead = [k for k, v in counts.items() if v <= 1 and k.count(" ") >= a.keep_depth]   # merged counts are >= min_out, never pruned
     for k in dead:
         del counts[k]
 
-reader = io.TextIOWrapper(zstandard.ZstdDecompressor().stream_reader(sys.stdin.buffer),
+source = sys.stdin.buffer if a.input == "-" else open(a.input, "rb")
+reader = io.TextIOWrapper(zstandard.ZstdDecompressor().stream_reader(source),
                           encoding="utf-8", errors="replace")
 welo = belo = 0
 event_ok = False
-for line in reader:
+def lines():
+    try:
+        yield from reader
+    except (zstandard.ZstdError, EOFError, OSError) as e:   # truncated download: keep what we have
+        print(f"input ended early ({e}); saving counts so far", file=sys.stderr, flush=True)
+
+for line in lines():
     if line.startswith("["):
         if line.startswith("[Event "):
             event_ok = line.startswith("[Event \"Rated") and any(s in line for s in SPEEDS)
@@ -81,7 +99,8 @@ for line in reader:
 
 flush_progress(final=True)
 out = {k: v for k, v in counts.items() if v >= a.min_out}
-meta = dict(games_read=games_read, games_kept=games_kept, plies=a.plies, min_elo=a.min_elo,
+meta = dict(games_read=games_read + merged_meta.get("games_read", 0),
+            games_kept=games_kept + merged_meta.get("games_kept", 0), plies=a.plies, min_elo=a.min_elo,
             max_elo=a.max_elo, min_out=a.min_out, sequences=len(out))
 with open(a.out, "w") as f:
     json.dump(dict(meta=meta, counts=out), f, separators=(",", ":"))

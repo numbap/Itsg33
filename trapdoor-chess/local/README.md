@@ -30,6 +30,19 @@ mkdir -p data
 curl -s https://database.lichess.org/standard/lichess_db_standard_rated_2026-10.pgn.zst | .venv/bin/python tree.py --max-games 25000000 --out data/tree.json
 ```
 
+A live stream can be cut off by the server (the first October run stopped after 7.5 million
+games). For a bigger tree, download a month with `download.sh`, which resumes after dropped
+connections, then count it from disk (much faster than streaming) and merge it into the
+first tree:
+
+```bash
+./download.sh
+```
+
+```bash
+.venv/bin/python tree.py --input data/2026-09.pgn.zst --merge data/tree.json --out data/tree_merged.json
+```
+
 ## 2. Search the tree for traps
 
 For every position reached at least 1,000 times, checks each reply played in at least 3% of
