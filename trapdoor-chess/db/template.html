@@ -218,6 +218,7 @@ footer{margin-top:28px;color:var(--muted);font-size:12px}
           <button class="btn" id="hintBtn">Hint</button>
           <button class="btn" id="retryBtn">Restart</button>
           <button class="btn" id="replayBtn">Replay opening</button>
+          <button class="btn" id="skipBtn" title="Load another trap that matches your filters (N)">Next trap</button>
         </div>
         <div class="idea" id="idea" hidden></div>
       </div>
@@ -563,6 +564,7 @@ $("nextVarBtn").onclick=()=>{
   const sv=seenVars(S.t);const un=S.t.vars.map((_,i)=>i).filter(i=>!sv.has(i));
   load(S.ti,{instant:true,force:un.length?un[Math.floor(Math.random()*un.length)]:null});
 };
+$("skipBtn").onclick=()=>$("nextTrapBtn").onclick();
 $("nextTrapBtn").onclick=()=>{
   const n=randomTrap();
   if(n==null){setMsg(filt.todo?"You've solved every trap that matches. Untick Unsolved to replay them.":"No other traps match your filters.");return}
@@ -572,6 +574,7 @@ document.addEventListener("keydown",e=>{
   if(e.target.closest&&e.target.closest("input,textarea"))return;
   const k={ArrowLeft:"prev",ArrowRight:"next",Home:"start",End:"end"}[e.key];
   if(k){e.preventDefault();nav(k);return}
+  if(e.key==="n"&&!e.metaKey&&!e.ctrlKey&&!e.altKey){$("nextTrapBtn").click();return}
   if(e.target.closest&&e.target.closest("button"))return;
   if(e.key==="h")hint();if(e.key==="r")$("retryBtn").click();});
 
