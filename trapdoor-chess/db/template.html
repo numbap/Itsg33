@@ -51,12 +51,12 @@ h1 span{color:var(--accent)}
 .ofilter>summary::-webkit-details-marker{display:none}
 .ofilter>summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .ofsum{font-weight:500;color:var(--muted)}
-.oflist{display:grid;gap:6px;max-height:260px;overflow:auto;padding:4px 10px 8px}
+.oflist{display:grid;gap:6px;max-height:calc(100vh - 330px);min-height:200px;overflow:auto;padding:4px 10px 8px}
 .oflist .check{font:500 13px/1.2 var(--mono)}
 .ofsub{display:grid;gap:5px;margin:6px 0 2px 24px}
 .ofsub .check{font-size:12px}
 #ofClear{margin:0 10px 10px}
-.libscroll{overflow:auto;min-height:0;padding-right:4px}
+.matchcnt{margin:0;font-size:13px;color:var(--muted)}
 @media (max-width:1060px){.libscroll{overflow:visible}}
 .empty{color:var(--muted);font-size:13px;padding:8px 10px}
 .lvl{display:inline-block;font:600 10px/1 var(--mono);letter-spacing:.06em;color:var(--muted);margin-left:6px;vertical-align:1px}
@@ -189,7 +189,7 @@ footer{margin-top:28px;color:var(--muted);font-size:12px}
           <button class="chip" id="ofClear" type="button">Clear</button>
         </details>
       </div>
-      <div class="libscroll"><div class="grps" id="lib"></div></div>
+      <p class="matchcnt" id="matchCnt" aria-live="polite"></p>
     </nav>
 
     <section class="stage" aria-label="Board">
@@ -261,7 +261,6 @@ TRAPS.forEach(t=>{t.vars=[];t.lines.forEach(l=>{let v=t.vars.indexOf(l.label);if
 const LEVEL=["","Beginner","Intermediate","Advanced"];
 let seen=store.get("trapdoor.v2",{});   // {trapId:[label,...]}
 const filt={q:"",side:"",todo:""};
-const openGroups=new Set(store.get("trapdoor.open",[]));
 let S=null; // current puzzle state
 let busy=false, animTimer=null, selected=null, hintStage=0;
 
@@ -291,23 +290,8 @@ function renderLib(){
   let tot=0,got=0;TRAPS.forEach(t=>{tot+=t.vars.length;got+=seenVars(t).size});
   $("progTxt").textContent=`${got} of ${tot} variations found · ${TRAPS.length} traps`;
   $("progBar").style.width=(100*got/tot)+"%";
-  // Group by each side's first move (1.e4 e5), then by the second move (2.Nf3 Nc6).
-  const top=new Map();
-  TRAPS.forEach((t,i)=>{if(!matches(t))return;const [k1,k2]=moveKeys(t);
-    if(!top.has(k1))top.set(k1,new Map());const sub=top.get(k1);if(!sub.has(k2))sub.set(k2,[]);sub.get(k2).push(i)});
-  if(!top.size){$("lib").innerHTML=`<p class="empty">No traps match these filters.</p>`;return}
-  const count=sub=>[...sub.values()].reduce((n,a)=>n+a.length,0);
-  const groups=[...top.entries()].sort((x,y)=>count(y[1])-count(x[1])||x[0].localeCompare(y[0]));
-  const cur=S?TRAPS[S.ti].setup.split(" "):null, curKey=cur?"1."+cur[0]+(cur[1]?" "+cur[1]:""):"";
-  const item=i=>{const t=TRAPS[i],sv=seenVars(t),known=sv.size>0;
-    return `<li><button data-i="${i}" aria-current="${S&&S.ti===i}"><span><span class="op"><i class="side ${t.side}" aria-label="Play as ${t.side==="w"?"White":"Black"}"></i>${esc(known?t.name:t.opening)}</span><span class="sub">${esc(known?t.opening:"after "+lastMv(t))}<span class="lvl">${LEVEL[t.level].toUpperCase()}</span></span></span><span class="pips" aria-label="${sv.size} of ${t.vars.length} variations found">${t.vars.map((_,k)=>`<i class="pip${sv.has(k)?" on":""}"></i>`).join("")}</span></button></li>`};
-  $("lib").innerHTML=groups.map(([k1,sub])=>{
-    const open=filt.q||openGroups.has(k1)||k1===curKey;
-    const subs=[...sub.entries()].sort((x,y)=>y[1].length-x[1].length||x[0].localeCompare(y[0]));
-    return `<details class="grp" data-g="${esc(k1)}"${open?" open":""}><summary><span class="mv1">${esc(k1)}</span><span class="cnt">${count(sub)}</span></summary>${subs.map(([k2,ids])=>`${k2?`<h3><span>${esc(k2)}</span><span class="cnt">${ids.length}</span></h3>`:""}<ul>${ids.map(item).join("")}</ul>`).join("")}</details>`}).join("");
-  $("lib").querySelectorAll("details.grp").forEach(d=>d.addEventListener("toggle",()=>{
-    if(filt.q)return; if(d.open)openGroups.add(d.dataset.g); else openGroups.delete(d.dataset.g); store.set("trapdoor.open",[...openGroups])}));
-  $("lib").querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{load(+b.dataset.i);if(window.innerWidth<=1060)document.querySelector(".stage").scrollIntoView({behavior:"smooth"})});
+  const n=TRAPS.filter(matches).length;
+  $("matchCnt").textContent=n?`${n} trap${n>1?"s":""} match your filters. Press Next trap (or N) for a new one.`:"No traps match these filters.";
 }
 document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>{
   const f=c.dataset.f;
@@ -336,7 +320,7 @@ $("ofList").addEventListener("change",e=>{const c=e.target;if(!c.dataset||!c.dat
   else{const s=openSel.get(k1);if(c.checked)s.add(k2);else s.delete(k2)}
   saveOpenSel();renderOpeningFilter();renderLib()});
 $("ofClear").onclick=()=>{openSel.clear();saveOpenSel();renderOpeningFilter();renderLib()};
-if(openSel.size)$("ofilter").open=true;
+$("ofilter").open=true;
 renderOpeningFilter();
 function randomTrap(){
   const pool=TRAPS.map((t,i)=>i).filter(i=>matches(TRAPS[i])&&i!==(S&&S.ti));
