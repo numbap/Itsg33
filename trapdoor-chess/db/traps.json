@@ -1858,6 +1858,753 @@
   ]
  },
  {
+  "id": "w034",
+  "name": "Fritz: Raid on g2",
+  "opening": "Two Knights Defense (Fritz Variation)",
+  "family": "Open Games",
+  "side": "b",
+  "level": 3,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Nd4 d6 Qxd6 Nxf7 Qc6 Nxh8",
+  "idea": "White's knight took your h8 rook. Your queen on c6 already looks down the long diagonal.",
+  "lines": [
+   {
+    "moves": "Qxg2 Rf1 Bg4",
+    "label": "White saves the rook",
+    "note": "Bg4 brings another attacker in, aimed at White's queen. White's king is caught in the centre and you're winning."
+   },
+   {
+    "moves": "Qxg2 Bf7+ Kd8",
+    "label": "White checks first",
+    "note": "Your king steps aside. The h1 rook is still hanging and White's king has no shelter."
+   }
+  ]
+ },
+ {
+  "id": "w035",
+  "name": "Sicilian d6 Wedge",
+  "opening": "Sicilian Defense",
+  "family": "Sicilian",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 c5 Nf3 Nc6 d4 e6 d5 exd5 exd5 Nce7",
+  "idea": "Black's knight retreated to e7, right in front of the bishop and queen. Push.",
+  "lines": [
+   {
+    "moves": "d6 Nf5 Qe2+ Be7",
+    "label": "The knight escapes to f5",
+    "note": "Qe2+ forces the bishop to block on e7, and dxe7 wins it next."
+   },
+   {
+    "moves": "d6 Nc6",
+    "label": "The knight goes back to c6",
+    "note": "The pawn on d6 splits Black's position in two. With Qe2+ or Bc4 coming, Black can't untangle."
+   }
+  ]
+ },
+ {
+  "id": "w036",
+  "name": "Two Knights ...Qe7 Blunder",
+  "opening": "Two Knights Defense",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7 Qe7",
+  "idea": "Black's queen move didn't do anything about your knight on f7. What is it hitting?",
+  "lines": [
+   {
+    "moves": "Nxh8 Nxe4 Qh5+ g6 Nxg6",
+    "label": "Black grabs e4",
+    "note": "Qh5+ and Nxg6 win more. Black is a rook and pawns down."
+   },
+   {
+    "moves": "Nxh8 Bxf2+ Kxf2",
+    "label": "Black takes on f2",
+    "note": "Take the bishop. You're a rook up."
+   },
+   {
+    "moves": "Nxh8 d5",
+    "label": "Black opens the centre",
+    "note": "You're a full rook up. Take on d5 with the pawn or the bishop."
+   },
+   {
+    "moves": "Nxh8 d6",
+    "label": "Black opens the bishop's diagonal",
+    "note": "You're a full rook up. Develop with Nc3 or h3."
+   }
+  ]
+ },
+ {
+  "id": "w037",
+  "name": "Englund c2 Fork",
+  "opening": "Englund Gambit",
+  "family": "London & Other 1.d4",
+  "side": "b",
+  "level": 2,
+  "setup": "d4 e5 dxe5 Nc6 Nf3 Qe7 Bf4 Qb4+ Bd2 Qxb2 Nc3 Nb4 Rb1",
+  "idea": "White's rook attacks your queen, but White's c2 is weak and your knight is right next to it.",
+  "lines": [
+   {
+    "moves": "Nxc2+ Qxc2 Qxc2",
+    "label": "White takes the knight",
+    "note": "The knight checks the king. If the queen takes it, your queen takes the queen."
+   }
+  ]
+ },
+ {
+  "id": "w038",
+  "name": "Scotch Gambit f7 Strike",
+  "opening": "Scotch Gambit",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 d4 exd4 Bc4 Bb4+ c3 dxc3 bxc3 Be7",
+  "idea": "Black's bishop retreated. Your queen and bishop can both reach f7.",
+  "lines": [
+   {
+    "moves": "Qd5 Nh6 Bxh6",
+    "label": "Black defends f7 with the knight",
+    "note": "Take the defender. Black can't recapture without giving up f7, and you stay a piece ahead."
+   },
+   {
+    "moves": "Qd5 d6 Qxf7+ Kd7 Be6#",
+    "label": "Black opens the bishop",
+    "note": "f7 falls with check and the bishop mates on e6."
+   }
+  ]
+ },
+ {
+  "id": "w039",
+  "name": "Centre Game Knight Raid",
+  "opening": "Centre Game",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 d4 exd4 Qxd4 Nc6 Qe3 b6 Nc3 Bc5 Qg3 Qf6",
+  "idea": "Black's queen came out to f6. Your knight can attack it and hit c7 at the same time.",
+  "lines": [
+   {
+    "moves": "Nd5 Qe5",
+    "label": "Black offers a queen trade",
+    "note": "Qxe5+ or Nxc7+ first: either way the knight forks c7 and the a8 rook falls."
+   },
+   {
+    "moves": "Nd5 Qd6",
+    "label": "The queen goes to d6",
+    "note": "Nxc7+ forks king and rook."
+   },
+   {
+    "moves": "Nd5 Qd4",
+    "label": "The queen goes to d4",
+    "note": "Nxc7+ is coming, and the queen is short of squares. Bd3 covers your e4 pawn first."
+   }
+  ]
+ },
+ {
+  "id": "w040",
+  "name": "Two Knights Qf3 Punished",
+  "opening": "Two Knights Defense",
+  "family": "Open Games",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Nxe4 Nxf7 Qh4 Qf3",
+  "idea": "White's queen came to f3 to defend f2. Find the knight jump that attacks it and more.",
+  "lines": [
+   {
+    "moves": "Nd4 Nd6+ Nxd6",
+    "label": "White checks with the knight",
+    "note": "Take it. The queen is still attacked and c2 is next."
+   },
+   {
+    "moves": "Nd4 Qe3 Nxc2+ Ke2",
+    "label": "White saves the queen",
+    "note": "Nxc2+ forked king and queen. Take the queen on e3 next."
+   },
+   {
+    "moves": "Nd4 Qh3 Qxf2+ Kd1 d5",
+    "label": "White saves the queen",
+    "note": "Take f2 with check. White's king is stuck in the centre and the attack is crushing."
+   }
+  ]
+ },
+ {
+  "id": "w041",
+  "name": "Knight Trapped on a5",
+  "opening": "Philidor Defense",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 d4 d6 d5 Na5",
+  "idea": "Black's knight went to the rim. Look at the squares it can still reach.",
+  "lines": [
+   {
+    "moves": "b4 Nf6",
+    "label": "Black ignores it",
+    "note": "b4 attacks the knight. Its only squares are covered by your pawns and the f1 bishop. Take it next."
+   }
+  ]
+ },
+ {
+  "id": "w042",
+  "name": "Wayward Queen Pin",
+  "opening": "King's Pawn (Wayward Queen Attack)",
+  "family": "Other 1.e4",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 Qh5 Nc6 Bc4 g6 Qf3 Nf6 c3 Bc5 d3 d6",
+  "idea": "Black's f6 knight is attacked by your queen and defended only by the d8 queen.",
+  "lines": [
+   {
+    "moves": "Bg5 Bg4 Qxf6",
+    "label": "Black attacks your queen",
+    "note": "Ignore it. Qxf6 trades on f6 and you come out a piece ahead."
+   },
+   {
+    "moves": "Bg5 Bf5",
+    "label": "Black blocks with the bishop",
+    "note": "Take the bishop. The pin on f6 is still there."
+   }
+  ]
+ },
+ {
+  "id": "w043",
+  "name": "Ruy Lopez Qd4 Fork",
+  "opening": "Ruy López (Berlin)",
+  "family": "Open Games",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 Bb5 Nf6 d3 Bc5 Bxc6 dxc6 Nxe5",
+  "idea": "White took the e5 pawn with the knight. Your queen and bishop can hit two things at once.",
+  "lines": [
+   {
+    "moves": "Qd4 Be3 Qxe5",
+    "label": "White blocks the bishop",
+    "note": "Take the knight. You've won a piece for a pawn."
+   },
+   {
+    "moves": "Qd4 O-O Qxe5",
+    "label": "White castles",
+    "note": "Take the knight. You've won a piece for a pawn."
+   },
+   {
+    "moves": "Qd4 Qe2 Qxe5",
+    "label": "White defends f2",
+    "note": "Take the knight. You've won a piece for a pawn."
+   }
+  ]
+ },
+ {
+  "id": "w044",
+  "name": "Vienna Qg4 g7 Grab",
+  "opening": "Vienna Game",
+  "family": "Open Games",
+  "side": "w",
+  "level": 3,
+  "setup": "e4 e5 Nc3 Nc6 Bc4 Bc5 Qg4 Qf6 Nd5 Qxf2+ Kd1 d6",
+  "idea": "Your king is under fire, but Black's kingside is empty. Grab material with tempo.",
+  "lines": [
+   {
+    "moves": "Qxg7 Be6",
+    "label": "Black develops",
+    "note": "Nxc7+ is next: it forks king and the a8 rook."
+   },
+   {
+    "moves": "Qxg7 Nd4",
+    "label": "Black attacks c2",
+    "note": "Cover c2 (c3 works). You keep the h8 rook under attack and Nxc7+ in reserve."
+   },
+   {
+    "moves": "Qxg7 Nce7",
+    "label": "Black defends c7",
+    "note": "Take the e7 knight. You're winning."
+   }
+  ]
+ },
+ {
+  "id": "w045",
+  "name": "Scandinavian Qd4 Double Attack",
+  "opening": "Scandinavian (Tennison Gambit)",
+  "family": "Scandinavian",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 d5 Nf3 dxe4 Ne5 Nf6 Bc4 e6 O-O",
+  "idea": "White castled and left the e5 knight and c4 bishop unprotected.",
+  "lines": [
+   {
+    "moves": "Qd4 Nxf7 Kxf7",
+    "label": "White saves the knight with a sacrifice",
+    "note": "Take it. You're a piece up."
+   }
+  ]
+ },
+ {
+  "id": "w046",
+  "name": "King's Gambit g5 Mate",
+  "opening": "King's Gambit Accepted",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 f4 exf4 Nf3 f6 Bc4 g5",
+  "idea": "Black pushed both kingside pawns. The e8–h5 diagonal is wide open.",
+  "lines": [
+   {
+    "moves": "Nxg5 fxg5 Qh5+ Ke7",
+    "label": "Black takes the knight",
+    "note": "Qf7+ or Qxg5+ next. The king has no escape and mate follows."
+   },
+   {
+    "moves": "Nxg5 Nh6 Qh5+ Ke7 Nf7",
+    "label": "Black defends with ...Nh6",
+    "note": "The knight forks the queen and the h8 rook."
+   }
+  ]
+ },
+ {
+  "id": "w047",
+  "name": "Scandinavian Qb5+ Fork",
+  "opening": "Scandinavian Defense",
+  "family": "Scandinavian",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 d5 Nf3 dxe4 Ng5 Nf6 Nc3 Bf5 Qe2 Qd4",
+  "idea": "Black's queen came forward and left b7 and the f5 bishop loose.",
+  "lines": [
+   {
+    "moves": "Qb5+ Bd7 Qxb7",
+    "label": "Black blocks with the bishop",
+    "note": "The queen takes b7 and hits the a8 rook."
+   },
+   {
+    "moves": "Qb5+ Nbd7 Qxf5",
+    "label": "Black blocks with the knight",
+    "note": "The check forks the king and the f5 bishop."
+   }
+  ]
+ },
+ {
+  "id": "w048",
+  "name": "Caro-Kann Discovered Attack",
+  "opening": "Caro-Kann Defense",
+  "family": "Caro-Kann",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 c6 d4 d5 Nc3 dxe4 Nxe4 Nf6 Ng5 h6 Nxf7 Kxf7 Nf3 Bg4",
+  "idea": "Black's bishop is pinning your knight to the queen. But the knight can move with check.",
+  "lines": [
+   {
+    "moves": "Ne5+ Kg8 Nxg4",
+    "label": "The king goes to g8",
+    "note": "The knight moved with check, uncovering the queen on g4. Take the bishop."
+   },
+   {
+    "moves": "Ne5+ Kg8 Bc4+ e6 Nxg4",
+    "label": "The king goes to g8",
+    "note": "Bc4+ first is fine too. Then take the bishop."
+   },
+   {
+    "moves": "Ne5+ Ke8 Nxg4",
+    "label": "The king goes back to e8",
+    "note": "The check uncovered your queen. Take the bishop."
+   }
+  ]
+ },
+ {
+  "id": "w049",
+  "name": "London Queen Grab",
+  "opening": "London System",
+  "family": "London & Other 1.d4",
+  "side": "b",
+  "level": 1,
+  "setup": "d4 d5 Bf4 Bg4 e3",
+  "idea": "White's last pawn move opened a diagonal you're already standing on.",
+  "lines": [
+   {
+    "moves": "Bxd1 Kxd1",
+    "label": "White recaptures",
+    "note": "...e3 opened the g4–d1 diagonal. You've won the queen for a bishop."
+   }
+  ]
+ },
+ {
+  "id": "w050",
+  "name": "Ruy Lopez Queen Fork",
+  "opening": "Ruy López",
+  "family": "Open Games",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 Bb5 Qf6 Bxc6 Qxc6 Nxe5",
+  "idea": "White took the e5 pawn. Your queen can win it back with check.",
+  "lines": [
+   {
+    "moves": "Qxe4+ Qe2 Qxg2",
+    "label": "White blocks with the queen",
+    "note": "Take g2 and hit the h1 rook. You come out pawns ahead."
+   }
+  ]
+ },
+ {
+  "id": "w051",
+  "name": "Queenless Knight Fork",
+  "opening": "Pirc Defense",
+  "family": "Other 1.e4",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 d6 d4 Nf6 e5 dxe5 dxe5 Qxd1+ Kxd1 Ng4 Nf3",
+  "idea": "White developed the knight and forgot about f2. Look at the king and the h1 rook.",
+  "lines": [
+   {
+    "moves": "Nxf2+ Ke2 Nxh1",
+    "label": "The king steps up",
+    "note": "The knight forks king and rook."
+   },
+   {
+    "moves": "Nxf2+ Ke1 Nxh1",
+    "label": "The king steps back",
+    "note": "The knight forks king and rook."
+   }
+  ]
+ },
+ {
+  "id": "w052",
+  "name": "En Passant Pin",
+  "opening": "Centre Game (Petrov setup)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 d4 Nf6 dxe5 Nxe4 Qe2 d5",
+  "idea": "Black's pawn jumped two squares, right past your e5 pawn. Take it and open the e-file.",
+  "lines": [
+   {
+    "moves": "exd6 f5 f3",
+    "label": "Black defends the knight",
+    "note": "En passant opens the e-file: the e4 knight is pinned to the king. f3 attacks it and it can't move."
+   }
+  ]
+ },
+ {
+  "id": "w053",
+  "name": "Bishop's Opening f7 Counter",
+  "opening": "Bishop's Opening (Petrov setup)",
+  "family": "Open Games",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nf6 Bc4 Nxe4 Nxe5 d5 Nxf7",
+  "idea": "White's knight took f7 and attacks your queen and the h8 rook. Find the queen move that hits it back.",
+  "lines": [
+   {
+    "moves": "Qe7 Qe2 Qxf7",
+    "label": "White pins your knight",
+    "note": "Take the knight. Your d5 pawn still hits the bishop and you've won a piece for a pawn."
+   }
+  ]
+ },
+ {
+  "id": "w054",
+  "name": "Philidor Qb3 Double Attack",
+  "opening": "Philidor Defense",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nf3 d6 Bc4 Bg4 d4 Bxf3 Qxf3 Qf6",
+  "idea": "Black's queen guards f7 but left b7 alone.",
+  "lines": [
+   {
+    "moves": "Qb3 Nd7 Qxb7",
+    "label": "Black blocks the bishop's diagonal",
+    "note": "The queen takes b7 and the a8 rook is next."
+   },
+   {
+    "moves": "Qb3 b6 Nc3",
+    "label": "Black defends b7",
+    "note": "Bring in the knight. Nd5 hits the queen and c7, and Black is losing material."
+   }
+  ]
+ },
+ {
+  "id": "w055",
+  "name": "Danish Qd5 Fork",
+  "opening": "Danish Gambit",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 d4 exd4 c3 dxc3 Bc4 Bb4 bxc3 Ba5",
+  "idea": "Black's bishop retreated to a5. Your queen can hit it and f7 together.",
+  "lines": [
+   {
+    "moves": "Qd5 Qe7 Qxa5",
+    "label": "Black defends f7",
+    "note": "Take the bishop on a5."
+   }
+  ]
+ },
+ {
+  "id": "w056",
+  "name": "Philidor Pawn Fork",
+  "opening": "Philidor Defense",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 d4 d6 Bc4 Be6",
+  "idea": "Black put the bishop on e6 next to the c6 knight.",
+  "lines": [
+   {
+    "moves": "d5 Na5 dxe6",
+    "label": "The knight runs",
+    "note": "The pawn takes the bishop."
+   },
+   {
+    "moves": "d5 Bd7 dxc6",
+    "label": "The bishop runs",
+    "note": "The pawn takes the knight."
+   }
+  ]
+ },
+ {
+  "id": "w057",
+  "name": "King's Gambit g2 Discovery",
+  "opening": "King's Gambit Accepted",
+  "family": "Open Games",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 f4 exf4 d4 Qh4+ g3",
+  "idea": "White blocked the check with a pawn. Your f4 pawn can do a lot of damage.",
+  "lines": [
+   {
+    "moves": "fxg3 Nf3 g2+ Nxh4 gxh1=Q",
+    "label": "White attacks your queen",
+    "note": "g2+ is a discovered check from the queen and the pawn hits h1. You lose the queen but get a new one and the rook."
+   },
+   {
+    "moves": "fxg3 Nf3 g2+ Nxh4 Bb4+",
+    "label": "White attacks your queen",
+    "note": "g2+ is a discovered check. Bb4+ also keeps the pawn and the h1 rook falls."
+   }
+  ]
+ },
+ {
+  "id": "w058",
+  "name": "Vienna Qg4 ...d5 Punished",
+  "opening": "Vienna Game",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nc3 Nc6 Bc4 Bc5 Qg4 d5",
+  "idea": "Black struck at your bishop, but your queen is already looking at g7.",
+  "lines": [
+   {
+    "moves": "Qxg7 dxc4 Qxh8",
+    "label": "Black takes the bishop",
+    "note": "Take the h8 rook. You're the exchange up."
+   },
+   {
+    "moves": "Qxg7 Qf6 Qxf6",
+    "label": "Black offers a queen trade",
+    "note": "Trade queens. You're a pawn up and Black's kingside is ruined."
+   }
+  ]
+ },
+ {
+  "id": "w059",
+  "name": "Jobava c7 Raid",
+  "opening": "London System (Jobava)",
+  "family": "London & Other 1.d4",
+  "side": "w",
+  "level": 1,
+  "setup": "d4 d5 Nc3 Nf6 Bf4 Nc6 Nb5 Rb8",
+  "idea": "Black guarded against a knight fork with ...Rb8, but c7 is still weak.",
+  "lines": [
+   {
+    "moves": "Bxc7 Qd7 Bxb8",
+    "label": "Black saves the queen",
+    "note": "The bishop took c7 attacking the queen and rook. Take the rook."
+   }
+  ]
+ },
+ {
+  "id": "w060",
+  "name": "Italian ...Qg5 Fork",
+  "opening": "Italian Game",
+  "family": "Open Games",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 d5 exd5 Nd4 Nxe5",
+  "idea": "White's knight took e5. Your queen can attack it and g2 at once.",
+  "lines": [
+   {
+    "moves": "Qg5 Kf1 Qxe5",
+    "label": "White defends g2",
+    "note": "Take the knight. You're a piece up."
+   }
+  ]
+ },
+ {
+  "id": "w061",
+  "name": "Bishop's Opening Qf3 Fork",
+  "opening": "Bishop's Opening",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Bc4 Nf6 d4 Nxe4 dxe5 Nxf2",
+  "idea": "Black's knight took f2. Your queen can hit it and threaten mate on f7.",
+  "lines": [
+   {
+    "moves": "Qf3 Qe7 Qxf2",
+    "label": "Black stops the mate",
+    "note": "Take the knight. You're a piece up."
+   }
+  ]
+ },
+ {
+  "id": "w062",
+  "name": "Traxler with Kf1",
+  "opening": "Two Knights Defense (Traxler)",
+  "family": "Open Games",
+  "side": "b",
+  "level": 3,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 Bc5 Nxf7 Bxf2+ Kxf2 Nxe4+ Kf1",
+  "idea": "White's king ran to f1. Bring the queen in.",
+  "lines": [
+   {
+    "moves": "Qh4 Qf3 Nd4",
+    "label": "White defends with the queen",
+    "note": "Nd4 hits the queen and c2. The attack wins material."
+   },
+   {
+    "moves": "Qh4 Qe1 Ng3+ Qxg3 Qxc4+ Ke1",
+    "label": "White defends with the queen",
+    "note": "Ng3+ drew the queen away. Take on f7 or e4 with check: you've won back your material with a big attack."
+   }
+  ]
+ },
+ {
+  "id": "w063",
+  "name": "Owen Rook Trap",
+  "opening": "Owen Defense",
+  "family": "London & Other 1.d4",
+  "side": "b",
+  "level": 1,
+  "setup": "d4 b6 e3 Bb7 Bd3",
+  "idea": "White's bishop left g2 without its defender.",
+  "lines": [
+   {
+    "moves": "Bxg2 Nc3",
+    "label": "White develops",
+    "note": "The h1 rook has nowhere to run. Take it next move."
+   }
+  ]
+ },
+ {
+  "id": "w064",
+  "name": "Fried Liver: ...Ke7 Mate",
+  "opening": "Two Knights Defense (Fried Liver)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 3,
+  "setup": "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Nxd5 Nxf7 Kxf7 Qf3+ Ke6 Nc3 Nd4 Bxd5+ Ke7",
+  "idea": "Black's king went back to e7 instead of d6. There's a forced mate.",
+  "lines": [
+   {
+    "moves": "Qf7+ Kd6 Ne4#",
+    "label": "The king runs to d6",
+    "note": "The knight on e4 mates."
+   }
+  ]
+ },
+ {
+  "id": "w065",
+  "name": "Queen Pinned on c6",
+  "opening": "King's Pawn (Elephant Gambit)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 1,
+  "setup": "e4 e5 Nf3 d5 exd5 Qxd5 Nc3 Qc6",
+  "idea": "Black's queen is on the same diagonal as the king.",
+  "lines": [
+   {
+    "moves": "Bb5 Qxb5 Nxb5",
+    "label": "Black takes the bishop",
+    "note": "Bb5 pinned the queen. You win it for a bishop."
+   },
+   {
+    "moves": "Bb5 Bd7 Bxc6",
+    "label": "Black blocks",
+    "note": "Take the queen."
+   }
+  ]
+ },
+ {
+  "id": "w066",
+  "name": "Jobava Knight Fork",
+  "opening": "London System (Jobava)",
+  "family": "London & Other 1.d4",
+  "side": "w",
+  "level": 1,
+  "setup": "d4 d5 Nc3 Nf6 Bf4 Nc6 Nb5 e6",
+  "idea": "Black's last move did nothing about c7.",
+  "lines": [
+   {
+    "moves": "Nxc7+ Ke7 Nxa8",
+    "label": "The king steps up",
+    "note": "The knight forks king and rook."
+   },
+   {
+    "moves": "Nxc7+ Kd7 Nxa8",
+    "label": "The king steps up",
+    "note": "The knight forks king and rook."
+   }
+  ]
+ },
+ {
+  "id": "w067",
+  "name": "Exchange Ruy ...Qd4 vs f4",
+  "opening": "Ruy López (Exchange)",
+  "family": "Open Games",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6 Nxe5 Qd4 f4",
+  "idea": "White defended the knight with f4, but the e4 pawn now has no defender.",
+  "lines": [
+   {
+    "moves": "Qxe4+ Qe2 Qxc2",
+    "label": "White blocks with the queen",
+    "note": "Take c2 too. You're a pawn up and b2 is hanging next."
+   }
+  ]
+ },
+ {
+  "id": "w068",
+  "name": "Philidor Long-Diagonal Fork",
+  "opening": "Philidor Defense",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 Nf3 d6 d4 Bg4 Be2 Bxf3 Bxf3 exd4 Qxd4 Nf6",
+  "idea": "Black's knight is in front of your e-pawn, and your bishop is aimed at b7.",
+  "lines": [
+   {
+    "moves": "e5 dxe5 Qxd8+ Kxd8 Bxb7",
+    "label": "Black takes the pawn",
+    "note": "The trade opened the long diagonal: the bishop takes b7 and hits the a8 rook."
+   }
+  ]
+ },
+ {
+  "id": "w069",
+  "name": "Petrov Discovered Check",
+  "opening": "Petrov Defense",
+  "family": "Open Games",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 Nf3 Nf6 Nxe5 Qe7 d4 d6 Nf3 Nxe4 Bd3",
+  "idea": "Your queen and White's king are on the same file. Move the knight.",
+  "lines": [
+   {
+    "moves": "Nc3+ Kd2 Nxd1",
+    "label": "White steps out of check",
+    "note": "Nc3+ is a discovered check that also attacks the queen. Take it."
+   }
+  ]
+ },
+ {
   "id": "m026",
   "name": "Morra f7 Queen Trap",
   "opening": "Smith–Morra Gambit",
