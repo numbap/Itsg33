@@ -3592,6 +3592,184 @@
   ]
  },
  {
+  "id": "w126",
+  "name": "Bishop's Opening Queen Raid Punished",
+  "opening": "Bishop's Opening",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 Bc4 Qg5 Nf3 Qxg2",
+  "idea": "Black's queen grabbed g2 and attacks your h1 rook. Counterattack it.",
+  "lines": [
+   {
+    "moves": "Rg1 Qh3 Bxf7+ Kd8",
+    "label": "The queen retreats to h3",
+    "note": "Bxf7+ drove the king out. Black's queen is short of squares too: Rg3 or d4 next and Black is lost."
+   },
+   {
+    "moves": "Rg1 Qxg1+ Nxg1",
+    "label": "Black gives up the queen",
+    "note": "The queen took the rook and was lost for it. You're a queen for a rook up."
+   }
+  ]
+ },
+ {
+  "id": "w127",
+  "name": "Queen Shuffle c2 Fork",
+  "opening": "King's Pawn (Napoleon Opening)",
+  "family": "Other 1.e4",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 Qf3 Nc6 Bc4 Nf6 Qb3 d5 exd5",
+  "idea": "White's queen wandered to b3 and c2 is guarded only by it.",
+  "lines": [
+   {
+    "moves": "Nd4 Qg3 Nxc2+ Kd1 Nxa1",
+    "label": "The queen leaves b3",
+    "note": "Nd4 hits the queen and c2. Nxc2+ forks king and rook."
+   }
+  ]
+ },
+ {
+  "id": "w128",
+  "name": "Danish Knight Rook Raid",
+  "opening": "Danish Gambit (...c5)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 d4 exd4 Nf3 c5 Bc4 h6 c3 dxc3",
+  "idea": "Black's king is still in the middle and the h8 rook is defended only by the king.",
+  "lines": [
+   {
+    "moves": "Bxf7+ Kxf7 Ne5+ Ke7 Ng6+ Ke8 Nxh8",
+    "label": "Black takes the bishop",
+    "note": "The knight checks its way to g6 and takes the h8 rook."
+   }
+  ]
+ },
+ {
+  "id": "w129",
+  "name": "Albin Endgame Fork",
+  "opening": "Albin Countergambit",
+  "family": "Queen's Gambit",
+  "side": "b",
+  "level": 1,
+  "setup": "d4 d5 c4 e5 Nc3 exd4 Qxd4 Nc6 Qxd5 Be6 Qxd8+ Rxd8 e3",
+  "idea": "Queens are off. White's c2 is weak and your knight is close.",
+  "lines": [
+   {
+    "moves": "Nb4 Bd2 Nc2+ Kd1 Nxa1",
+    "label": "White covers d1",
+    "note": "The knight lands on c2 with check and takes the a1 rook."
+   }
+  ]
+ },
+ {
+  "id": "w130",
+  "name": "Queenless Back-Rank Mate",
+  "opening": "Pirc Defense (1.d4)",
+  "family": "London & Other 1.d4",
+  "side": "w",
+  "level": 2,
+  "setup": "d4 Nf6 Nc3 g6 Bf4 Bg7 e4 d6 e5 dxe5 dxe5 Qxd1+ Rxd1 Nh5 Nd5 Nxf4",
+  "idea": "Black took your bishop. Your knight and rook are aimed at Black's king.",
+  "lines": [
+   {
+    "moves": "Nxc7+ Kf8 Rd8#",
+    "label": "The king steps aside",
+    "note": "The knight check drove the king to f8, and the rook mates on d8."
+   }
+  ]
+ },
+ {
+  "id": "w131",
+  "name": "English Knight Fork",
+  "opening": "English Opening",
+  "family": "Flank Openings",
+  "side": "w",
+  "level": 1,
+  "setup": "c4 d5 cxd5 Qxd5 Nc3 Qc6 Nf3 Bg4",
+  "idea": "Black's bishop pins your knight, but the knight can jump with tempo.",
+  "lines": [
+   {
+    "moves": "Ne5 Qe6 Qa4+ Nc6 Nxg4",
+    "label": "The queen retreats",
+    "note": "Ne5 hit the queen, Qa4+ forced a block, and the knight takes g4."
+   }
+  ]
+ },
+ {
+  "id": "w132",
+  "name": "Scandinavian Knight Trap",
+  "opening": "Scandinavian (Tennison Gambit)",
+  "family": "Scandinavian",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 d5 Nf3 dxe4 Nh4 Nf6 Nc3",
+  "idea": "White's knight is on the rim at h4.",
+  "lines": [
+   {
+    "moves": "g5 d4",
+    "label": "White ignores it",
+    "note": "The knight on h4 has no safe square. Take it next move."
+   }
+  ]
+ },
+ {
+  "id": "w133",
+  "name": "Ruy Lopez Queen Fork",
+  "opening": "Ruy López (Bird's Defense)",
+  "family": "Open Games",
+  "side": "b",
+  "level": 2,
+  "setup": "e4 e5 Nf3 Nc6 Bb5 Nd4 Nxd4 exd4 d3 c6 Ba4 Qa5+ Bd2",
+  "idea": "White blocked your check, but the a4 bishop is now loose.",
+  "lines": [
+   {
+    "moves": "Qxa4 O-O",
+    "label": "White castles",
+    "note": "The check forked the king and the a4 bishop. You're a piece up."
+   }
+  ]
+ },
+ {
+  "soft": [
+   "Nf3"
+  ],
+  "id": "w134",
+  "name": "QGA Pin on a6",
+  "opening": "Queen's Gambit Accepted",
+  "family": "Queen's Gambit",
+  "side": "w",
+  "level": 1,
+  "setup": "d4 d5 c4 dxc4 Nc3 b5 Nxb5 Ba6 Nc3 Nc6",
+  "idea": "Black's a6 bishop has no defender, and the c6 knight stands in front of the king.",
+  "lines": [
+   {
+    "moves": "Qa4 Qd7 Qxa6",
+    "label": "Black defends the knight",
+    "note": "Qa4 pinned the c6 knight and hit the a6 bishop. Take it."
+   }
+  ]
+ },
+ {
+  "id": "w135",
+  "name": "Polish Long-Diagonal Raid",
+  "opening": "Polish Opening",
+  "family": "Flank Openings",
+  "side": "b",
+  "level": 2,
+  "setup": "b4 e5 b5 Bc5 a4",
+  "idea": "White pushed queenside pawns and left the king's side and the a1 rook exposed.",
+  "lines": [
+   {
+    "moves": "Bxf2+ Kxf2 Qh4+ g3 Qd4+ e3 Qxa1",
+    "label": "White takes the bishop",
+    "note": "The queen checks its way to d4 and takes the a1 rook."
+   }
+  ]
+ },
+ {
   "id": "m026",
   "name": "Morra f7 Queen Trap",
   "opening": "Smith–Morra Gambit",
