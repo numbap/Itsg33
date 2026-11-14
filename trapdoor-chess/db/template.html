@@ -503,7 +503,14 @@ function mine(sq){const p=S.game.get(sq);return p&&p.color===S.t.side&&S.game.tu
 
 /* pointer: click-click and drag */
 let drag=null;
+// Drop the floating copy and redraw. Called whenever a drag ends without a proper release over
+// the board: the button was let go outside the page or frame, capture was lost, or the window lost focus.
+function cancelDrag(){
+  document.querySelectorAll(".ghost").forEach(g=>g.remove());
+  if(drag){drag=null;render()}
+}
 $("board").addEventListener("pointerdown",e=>{
+  if(drag||document.querySelector(".ghost"))cancelDrag();
   if(S.view!=null){nav("end");return}
   if(busy||S.done)return;
   const cell=e.target.closest(".sq");if(!cell)return;const sq=cell.dataset.sq;
@@ -519,6 +526,7 @@ $("board").addEventListener("pointerdown",e=>{
 });
 $("board").addEventListener("pointermove",e=>{
   if(!drag)return;
+  if(e.pointerType==="mouse"&&e.buttons===0){cancelDrag();return}   // released somewhere we never heard about
   if(!drag.moved&&Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)<5)return;
   if(!drag.moved){drag.moved=true;document.body.appendChild(drag.ghost);const p=$("board").querySelector(`.pc[data-sq="${drag.from}"]`);if(p)p.classList.add("drag")}
   drag.ghost.style.left=(e.clientX-drag.size/2)+"px";drag.ghost.style.top=(e.clientY-drag.size/2)+"px";
@@ -530,7 +538,10 @@ function endDrag(e){
   if(cell&&cell.dataset.sq!==d.from)tryMove(d.from,cell.dataset.sq);else render();
 }
 $("board").addEventListener("pointerup",endDrag);
-$("board").addEventListener("pointercancel",()=>{if(drag){drag.ghost.remove();drag=null;render()}});
+$("board").addEventListener("pointercancel",cancelDrag);
+$("board").addEventListener("lostpointercapture",e=>{if(drag)setTimeout(()=>{if(drag)cancelDrag()},0)});
+window.addEventListener("pointerup",e=>{if(drag&&!$("board").contains(e.target))cancelDrag()});
+window.addEventListener("blur",()=>{if(drag)cancelDrag()});
 
 function askPromo(from,to){
   const col=S.t.side==="w"?"white":"black";
