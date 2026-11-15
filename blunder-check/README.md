@@ -1,6 +1,6 @@
 # Blunder Check
 
-A browser chess trainer. You play a Stockfish bot that starts at 250 Elo and tracks your rating. From move 6, you must assess the position before you can move, and you type every move in algebraic notation.
+A browser chess trainer. You play a Stockfish bot that starts at 250 Elo and tracks your rating. You type every move in algebraic notation. From move 6, one move in every three, picked at random within each block of three, is locked until you assess the position (`QUIZ_EVERY` sets the block size).
 
 ## Files
 
