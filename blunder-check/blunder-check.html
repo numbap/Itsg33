@@ -1,0 +1,898 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blunder Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+Symbols+2&display=swap">
+<style>
+/* Layout: board and move entry on the left, coach's scoresheet panel on the right; stacks on phones. */
+:root {
+  --bg: #eef1f3;
+  --surface: #ffffff;
+  --ink: #17212b;
+  --muted: #5d6b78;
+  --line: #d3dae0;
+  --accent: #2346c4;
+  --accent-soft: #dfe5fb;
+  --on-accent: #ffffff;
+  --sq-light: #dce4e9;
+  --sq-dark: #7b93a5;
+  --last: rgba(255, 196, 0, .38);
+  --good: #1f8a4c;
+  --warn: #c77700;
+  --bad: #c8322b;
+  --piece-w: #fbfcfd;
+  --piece-b: #141b22;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-piece: "Noto Sans Symbols 2", "Segoe UI Symbol", "DejaVu Sans", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161b; --surface: #1a2128; --ink: #e6ebef; --muted: #93a1ad; --line: #2c3640;
+    --accent: #7d97ff; --accent-soft: #232f55; --on-accent: #0c1230; --sq-light: #a9b8c3; --sq-dark: #5a7183;
+    --good: #45c27a; --warn: #f0a531; --bad: #f06a62; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161b; --surface: #1a2128; --ink: #e6ebef; --muted: #93a1ad; --line: #2c3640;
+  --accent: #7d97ff; --accent-soft: #232f55; --on-accent: #0c1230; --sq-light: #a9b8c3; --sq-dark: #5a7183;
+  --good: #45c27a; --warn: #f0a531; --bad: #f06a62; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 5vw, 40px); line-height: 1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+h1 small { display: block; font-family: var(--font-body); font-weight: 400; font-size: 14px; color: var(--muted); letter-spacing: 0; margin-top: 6px; }
+.ratings { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; display: flex; flex-direction: column; min-width: 96px; }
+.chip .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.chip .val { font-family: var(--font-mono); font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums; }
+.up { color: var(--good); } .down { color: var(--bad); }
+
+main { display: grid; grid-template-columns: minmax(0, 600px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 880px) { main { grid-template-columns: minmax(0, 1fr); } }
+
+.board-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.player-bar { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--muted); gap: 8px; flex-wrap: wrap; }
+.player-bar b { color: var(--ink); font-weight: 600; }
+.board { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; max-width: 600px; aspect-ratio: 1; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 10px 30px -18px rgba(0,0,0,.5); user-select: none; touch-action: manipulation; }
+.board.viewing { box-shadow: 0 0 0 3px var(--warn), 0 10px 30px -18px rgba(0,0,0,.5); }
+.sq { position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; }
+.sq.light { background: var(--sq-light); } .sq.dark { background: var(--sq-dark); }
+.sq:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; z-index: 2; }
+.sq.last::before { content: ""; position: absolute; inset: 0; background: var(--last); }
+.sq.sel::before { content: ""; position: absolute; inset: 0; background: rgba(35,70,196,.35); }
+.sq.check::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(200,50,43,.85) 0%, rgba(200,50,43,.35) 45%, transparent 72%); }
+.sq .dot { position: absolute; width: 28%; height: 28%; border-radius: 50%; background: rgba(20,30,50,.28); }
+.sq .ring { position: absolute; inset: 6%; border-radius: 50%; border: 5px solid rgba(20,30,50,.28); }
+.sq .mark { position: absolute; inset: 3px; border-radius: 4px; border: 4px solid var(--accent); }
+.sq .mark.good { border-color: var(--good); }
+.sq .mark.miss { border-color: var(--warn); border-style: dashed; }
+.sq .mark.bad { border-color: var(--bad); }
+.sq .mark.best { border-color: var(--good); border-style: double; border-width: 6px; }
+.sq .coord { position: absolute; font-family: var(--font-mono); font-size: 10px; font-weight: 600; opacity: .8; pointer-events: none; }
+.sq .coord.f { right: 3px; bottom: 1px; } .sq .coord.r { left: 3px; top: 1px; }
+.sq.light .coord { color: var(--sq-dark); } .sq.dark .coord { color: var(--sq-light); }
+.piece { position: relative; font-family: var(--font-piece); font-size: clamp(26px, 8.4vw, 54px); line-height: 1; pointer-events: none; z-index: 1; }
+.piece.w { color: var(--piece-w); text-shadow: 0 0 1px #000, 1px 0 0 #1b232b, -1px 0 0 #1b232b, 0 1px 0 #1b232b, 0 -1px 0 #1b232b; }
+.piece.b { color: var(--piece-b); text-shadow: 0 0 1px rgba(255,255,255,.4); }
+.board.locked .sq { cursor: default; }
+.board.quiz .sq { cursor: crosshair; }
+
+/* Move entry */
+.entry { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; max-width: 600px; }
+.entry.live { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.entry-row { display: flex; gap: 8px; }
+.entry input { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 20px; font-weight: 600; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.entry input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.entry input:disabled { opacity: .6; }
+.keys { display: flex; flex-wrap: wrap; gap: 6px; }
+.keys button { font-family: var(--font-mono); font-weight: 600; font-size: 14px; min-width: 40px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.keys button:disabled { opacity: .45; cursor: not-allowed; }
+.keys button:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.entry-msg { font-size: 14px; min-height: 1.5em; }
+.entry-msg.bad { color: var(--bad); } .entry-msg.good { color: var(--good); }
+.entry-msg code, .feedback code, .review-detail code { font-family: var(--font-mono); font-weight: 600; }
+
+.panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.card h2 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; letter-spacing: -.01em; }
+.eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; }
+.status { font-size: 15px; }
+.status.turn { color: var(--accent); font-weight: 600; }
+.quiz-card { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.steps { display: flex; gap: 6px; }
+.steps span { flex: 1; height: 5px; border-radius: 3px; background: var(--line); }
+.steps span.done { background: var(--good); } .steps span.now { background: var(--accent); }
+.q-prompt { font-size: 16px; font-weight: 500; }
+.q-help { color: var(--muted); font-size: 14px; margin: 0; }
+.picked { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.feedback { border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.feedback.good { background: color-mix(in srgb, var(--good) 14%, transparent); }
+.feedback.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.feedback.warn { background: color-mix(in srgb, var(--warn) 16%, transparent); }
+.feedback ul, .review-detail ul { margin: 6px 0 0; padding-left: 18px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button.btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 8px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button.btn:disabled { opacity: .45; cursor: not-allowed; }
+button.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.choice { text-align: left; font-family: var(--font-mono); }
+.choice.chosen { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.checklist { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.checklist li.off { color: var(--muted); }
+.checklist .tag { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-left: 6px; padding: 1px 6px; border-radius: 4px; }
+.checklist .tag.locked { color: var(--muted); border: 1px solid var(--line); }
+.checklist .tag.mastered { color: var(--good); border: 1px solid currentColor; }
+.moves { font-family: var(--font-mono); font-size: 13px; display: grid; grid-template-columns: 34px 1fr 1fr; gap: 2px 8px; max-height: 180px; overflow-y: auto; font-variant-numeric: tabular-nums; }
+.moves .n { color: var(--muted); }
+.moves .blunder { color: var(--bad); } .moves .mistake { color: var(--warn); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { display: flex; flex-direction: column; min-width: 0; }
+.stat .v { font-family: var(--font-mono); font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; }
+.stat .k { font-size: 12px; color: var(--muted); }
+.result { font-family: var(--font-display); font-size: 22px; font-weight: 800; }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+
+/* Review */
+.review-card { border-color: var(--warn); }
+.review-sum { font-size: 14px; }
+.review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.review-item { width: 100%; text-align: left; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 4px 10px; align-items: baseline; font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.review-item:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.review-item.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.review-item .mv { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.review-item .what b { font-weight: 600; }
+.pill { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 0 6px; border-radius: 4px; margin-right: 6px; }
+.pill.check { color: var(--warn); border: 1px solid currentColor; }
+.pill.blunder { color: var(--bad); border: 1px solid currentColor; }
+.pill.mistake { color: var(--warn); border: 1px dashed currentColor; }
+.review-detail { font-size: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+@media (prefers-reduced-motion: no-preference) { .quiz-card, .review-card { animation: pop .25s ease-out; } @keyframes pop { from { transform: translateY(4px); opacity: .6; } } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Blunder Check<small>Assess the position, then write your move. The bot gets stronger as you do.</small></h1>
+    <div class="ratings">
+      <div class="chip"><span class="lbl">Your rating</span><span class="val" id="myRating">250</span></div>
+      <div class="chip"><span class="lbl">Bot rating</span><span class="val" id="botRating">250</span></div>
+      <div class="chip"><span class="lbl">Games</span><span class="val" id="gamesPlayed">0</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="board-col" aria-label="Chess board">
+      <div class="player-bar"><span><b>Bot</b> <span id="topInfo"></span></span><span id="engineState">Loading engine…</span></div>
+      <div class="board locked" id="board" role="grid" aria-label="Board"></div>
+      <div class="player-bar"><span><b>You</b> <span id="bottomInfo"></span></span><span id="material"></span></div>
+      <form class="entry" id="moveForm" autocomplete="off">
+        <label class="eyebrow" for="moveInput">Your move, in algebraic notation</label>
+        <div class="entry-row">
+          <input id="moveInput" name="move" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="12" placeholder="e.g. Nf3, exd5, O-O">
+          <button class="btn primary" type="submit" id="playBtn">Play</button>
+        </div>
+        <div class="keys" id="keys" aria-label="Notation keys"></div>
+        <div class="entry-msg" id="moveMsg" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="card" id="statusCard">
+        <span class="eyebrow" id="statusEyebrow">Game 1</span>
+        <div class="status" id="status">Starting…</div>
+        <div id="resultBox" hidden></div>
+        <div class="btns">
+          <button class="btn primary" id="newGameBtn" type="button" hidden>Next game</button>
+          <button class="btn" id="resignBtn" type="button">Resign</button>
+        </div>
+      </div>
+
+      <div class="card quiz-card" id="quizCard" hidden>
+        <span class="eyebrow" id="quizEyebrow">Position check</span>
+        <div class="steps" id="quizSteps"></div>
+        <h2 id="qTitle"></h2>
+        <div class="q-prompt" id="qPrompt"></div>
+        <p class="q-help" id="qHelp"></p>
+        <div class="picked" id="qPicked"></div>
+        <div class="btns" id="qChoices"></div>
+        <div class="feedback" id="qFeedback" hidden></div>
+        <div class="btns" id="qButtons"></div>
+      </div>
+
+      <div class="card review-card" id="reviewCard" hidden>
+        <span class="eyebrow">Game review</span>
+        <h2 id="reviewHead">What you missed</h2>
+        <div class="review-sum" id="reviewSum"></div>
+        <ul class="review-list" id="reviewList"></ul>
+        <div class="review-detail" id="reviewDetail" hidden></div>
+        <div class="btns"><button class="btn" id="reviewBack" type="button" hidden>Back to final position</button></div>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">Your checklist</span>
+        <ol class="checklist" id="checklist"></ol>
+        <p class="note">From move 6 you can’t type a move until you work through the list. Pieces are judged with simple counting (attackers, defenders, piece values), so pins and deeper tactics are left to you. A check you get right 9 times in 10 is marked mastered and only comes up now and then.</p>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">Assessment record</span>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">Moves</span>
+        <div class="moves" id="moves"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const FILES = 'abcdefgh';
+const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
+const NAME = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+const GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+const QUIZ_FROM_MOVE = 6;
+const STORE_KEY = 'blunder-check-v1';
+const BLUNDER = 300, MISTAKE = 150; // centipawns lost; set high because quick browser searches are noisy
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cap1 = s => s[0].toUpperCase() + s.slice(1);
+
+const CHECKS = [
+  { id: 'threats', at: 0, title: 'Threats', text: 'What does the opponent’s last move threaten?' },
+  { id: 'danger', at: 0, title: 'Safety', text: 'Which of your pieces are in danger right now?' },
+  { id: 'chances', at: 500, title: 'Opportunities', text: 'Which enemy pieces can you win?' },
+  { id: 'candidates', at: 900, title: 'Candidate moves', text: 'Which of three moves is best?' },
+];
+
+/* ---------- persistence ---------- */
+const defaults = { rating: 250, games: 0, wins: 0, losses: 0, draws: 0, asked: 0, firstTry: 0, byCheck: {}, recent: {} };
+let profile = { ...defaults };
+try { const raw = localStorage.getItem(STORE_KEY); if (raw) profile = { ...defaults, ...JSON.parse(raw) }; } catch (e) {}
+if (!profile.recent) profile.recent = {};
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(profile)); } catch (e) {} }
+const mastered = id => { const r = profile.recent[id] || []; return r.length >= 10 && r.filter(Boolean).length / r.length >= 0.9; };
+
+/* ---------- geometry ---------- */
+const sqName = (f, r) => FILES[f] + (r + 1);
+const parse = sq => [sq.charCodeAt(0) - 97, +sq[1] - 1];
+const inB = (f, r) => f >= 0 && f < 8 && r >= 0 && r < 8;
+const KN = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+const KG = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+const ORTH = [[1,0],[-1,0],[0,1],[0,-1]];
+const DIAG = [[1,1],[1,-1],[-1,1],[-1,-1]];
+
+function mapOf(g) { const m = {}; for (let f = 0; f < 8; f++) for (let r = 0; r < 8; r++) { const s = sqName(f, r), p = g.get(s); if (p) m[s] = p; } return m; }
+function attackersOf(m, sq, color) {
+  const [f, r] = parse(sq), out = [];
+  const dir = color === 'w' ? -1 : 1;
+  for (const df of [-1, 1]) { if (inB(f + df, r + dir)) { const s = sqName(f + df, r + dir); if (m[s] && m[s].color === color && m[s].type === 'p') out.push(s); } }
+  for (const [a, b] of KN) if (inB(f + a, r + b)) { const s = sqName(f + a, r + b); if (m[s] && m[s].color === color && m[s].type === 'n') out.push(s); }
+  for (const [a, b] of KG) if (inB(f + a, r + b)) { const s = sqName(f + a, r + b); if (m[s] && m[s].color === color && m[s].type === 'k') out.push(s); }
+  const ray = (dirs, types) => { for (const [a, b] of dirs) { let ff = f + a, rr = r + b; while (inB(ff, rr)) { const s = sqName(ff, rr); if (m[s]) { if (m[s].color === color && types.includes(m[s].type)) out.push(s); break; } ff += a; rr += b; } } };
+  ray(ORTH, ['r', 'q']); ray(DIAG, ['b', 'q']);
+  return out;
+}
+const other = c => (c === 'w' ? 'b' : 'w');
+const pname = (m, s) => `${NAME[m[s].type]} on ${s}`;
+/* Pieces of `color` that are attacked and either undefended or attacked by something cheaper. */
+function enPrise(m, color, owner) {
+  const res = [];
+  for (const s in m) {
+    const p = m[s]; if (p.color !== color || p.type === 'k') continue;
+    const atk = attackersOf(m, s, other(color)); if (!atk.length) continue;
+    const def = attackersOf(m, s, color);
+    const cheapest = atk.reduce((a, x) => (VAL[m[x].type] < VAL[m[a].type] ? x : a), atk[0]);
+    const who = `${color === owner ? 'your' : 'their'} ${pname(m, s)}`;
+    if (!def.length) res.push({ sq: s, why: `${who} is attacked by the ${pname(m, cheapest)} and not defended` });
+    else if (VAL[m[cheapest].type] < VAL[p.type]) res.push({ sq: s, why: `${who} is defended, but the attacking ${pname(m, cheapest)} is worth less, so the trade still wins material` });
+  }
+  return res;
+}
+
+/* ---------- move entry (algebraic notation) ---------- */
+const norm = s => s.replace(/e\.?p\.?$/i, '').replace(/[+#!?\s]/g, '').replace(/0/g, 'O').replace(/[x:=\-]/g, '');
+const CASTLE_RULE = 'Castling needs the king and that rook unmoved, empty squares between them, and the king not in check or passing through an attacked square.';
+/* Returns { move } or { error } (error is HTML). */
+function readMove(raw, g) {
+  const input = raw.trim();
+  if (!input) return { error: 'Type a move first, like <code>e4</code> or <code>Nf3</code>.' };
+  const legal = g.moves({ verbose: true });
+  const coord = /^([a-h][1-8])\s*[-x]?\s*([a-h][1-8])([qrbn])?$/i.exec(input);
+  if (coord) {
+    const mv = legal.find(m => m.from === coord[1].toLowerCase() && m.to === coord[2].toLowerCase() && (!m.promotion || m.promotion === (coord[3] || 'q').toLowerCase()));
+    return { error: mv ? `That’s coordinate notation. In algebraic notation this move is <code>${esc(mv.san)}</code>. Type that instead.` : 'That’s coordinate notation, and it isn’t a legal move either. Write the piece letter and the square, like <code>Nf3</code>.' };
+  }
+  const n = norm(input);
+  const exact = legal.find(m => norm(m.san) === n);
+  if (exact) return { move: exact };
+  if (/^[nrqk]/.test(n) && legal.some(m => norm(m.san) === n[0].toUpperCase() + n.slice(1)))
+    return { error: `Piece letters are capitals. Did you mean <code>${esc(n[0].toUpperCase() + n.slice(1))}</code>? (Lowercase letters are files, like the b in <code>bxc3</code>.)` };
+  if (/^O{2,3}$/.test(n)) return { error: `You can’t castle ${n.length === 3 ? 'queenside' : 'kingside'} right now. ${CASTLE_RULE}` };
+  const p = /^([KQRBN])?([a-h])?([1-8])?([a-h][1-8])([QRBNqrbn])?$/.exec(n);
+  if (!p) return { error: `I couldn’t read <code>${esc(input)}</code>. Write the piece letter (K, Q, R, B, N, or nothing for a pawn), then the square: <code>Nf3</code>, <code>e4</code>, <code>Bxc6</code>, <code>O-O</code>.` };
+  const piece = (p[1] || 'p').toLowerCase(), to = p[4], promo = p[5] && p[5].toLowerCase();
+  let cands = legal.filter(m => m.piece === piece && m.to === to && (!p[2] || m.from[0] === p[2]) && (!p[3] || m.from[1] === p[3]));
+  if (promo) cands = cands.filter(m => m.promotion === promo);
+  if (cands.length > 1) {
+    if (cands.every(m => m.promotion && m.from === cands[0].from)) return { error: `Say what the pawn becomes: <code>${to}=Q</code>, <code>${to}=R</code>, <code>${to}=B</code> or <code>${to}=N</code>.` };
+    return { error: `More than one ${NAME[piece]} can reach ${to}. Say which one: ${cands.map(m => `<code>${esc(m.san)}</code>`).join(' or ')}.` };
+  }
+  if (cands.length === 1) {
+    const mv = cands[0];
+    if (piece === 'p' && mv.from[0] !== mv.to[0] && !p[2]) return { error: `Pawn captures start with the pawn’s file: <code>${esc(mv.san)}</code>.` };
+    return { move: mv, note: `Written <code>${esc(mv.san)}</code>. The extra detail wasn’t needed.` };
+  }
+  const own = Object.values(mapOf(g)).some(x => x.color === g.turn() && x.type === piece);
+  if (!own) return { error: `You don’t have a ${NAME[piece]} on the board.` };
+  return { error: `No ${NAME[piece]} of yours can legally move to ${to}${p[2] || p[3] ? ' from there' : ''}.` + (g.in_check() ? ' You’re in check, so your move has to get your king out of it.' : ' Check that it isn’t blocked, and that moving it wouldn’t leave your king in check.') };
+}
+
+/* ---------- engine ---------- */
+class Engine {
+  constructor() {
+    this.ready = false; this.listeners = [];
+    try {
+      this.w = new Worker('stockfish.js');
+      this.w.onmessage = e => { const line = typeof e.data === 'string' ? e.data : String(e.data); this.listeners.slice().forEach(fn => fn(line)); };
+      this.w.onerror = () => { this.fail(); };
+    } catch (e) { this.w = null; }
+    this.init = new Promise(resolve => {
+      if (!this.w) { this.fail(); return resolve(false); }
+      const t = setTimeout(() => { this.fail(); resolve(false); }, 15000);
+      const fn = line => { if (line.startsWith('readyok')) { clearTimeout(t); this.off(fn); this.ready = true; resolve(true); } };
+      this.on(fn); this.send('uci'); this.send('isready');
+    });
+    this.queue = this.init.then(() => {}, () => {});
+  }
+  fail() { this.ready = false; if (this.w) { try { this.w.terminate(); } catch (e) {} } this.w = null; }
+  on(fn) { this.listeners.push(fn); } off(fn) { this.listeners = this.listeners.filter(x => x !== fn); }
+  send(c) { if (this.w) this.w.postMessage(c); }
+  /* Returns [{uci, score}] scored for the side to move, in centipawns. */
+  analyze(fen, depth, multipv, movetime) {
+    const job = () => new Promise(resolve => {
+      if (!this.w) return resolve(fallbackAnalyze(fen));
+      const pvs = {};
+      const fn = line => {
+        if (line.startsWith('info') && line.includes(' pv ')) {
+          const mp = /multipv (\d+)/.exec(line), sc = /score (cp|mate) (-?\d+)/.exec(line), pv = / pv (\S+)/.exec(line);
+          if (sc && pv) {
+            let score = +sc[2]; if (sc[1] === 'mate') score = score > 0 ? 100000 - score * 100 : -100000 - score * 100;
+            pvs[mp ? +mp[1] : 1] = { uci: pv[1], score };
+          }
+        } else if (line.startsWith('bestmove')) {
+          this.off(fn);
+          const list = Object.values(pvs);
+          resolve(list.length ? list : fallbackAnalyze(fen));
+        }
+      };
+      this.on(fn);
+      this.send('setoption name MultiPV value ' + Math.min(500, Math.max(1, multipv)));
+      this.send('position fen ' + fen);
+      this.send(`go depth ${depth} movetime ${movetime}`);
+    });
+    this.queue = this.queue.then(job, job);
+    return this.queue;
+  }
+}
+/* Used only if Stockfish cannot start: two-ply material count. */
+function fallbackAnalyze(fen) {
+  const g = new Chess(fen), me = g.turn();
+  const mat = gg => { let s = 0; const m = mapOf(gg); for (const k in m) if (m[k].type !== 'k') s += (m[k].color === me ? 1 : -1) * VAL[m[k].type] * 100; return s; };
+  return g.moves({ verbose: true }).map(mv => {
+    g.move(mv);
+    let worst = Infinity;
+    if (g.in_checkmate()) worst = 100000;
+    else { const replies = g.moves({ verbose: true }); if (!replies.length) worst = 0; for (const r of replies) { g.move(r); worst = Math.min(worst, g.in_checkmate() ? -100000 : mat(g)); g.undo(); } }
+    g.undo();
+    return { uci: mv.from + mv.to + (mv.promotion || ''), score: worst };
+  });
+}
+
+/* ---------- bot strength ---------- */
+function botParams(elo) {
+  return {
+    depth: Math.max(3, Math.min(14, 3 + Math.floor((elo - 250) / 220))),
+    temp: 5 + 295 * Math.exp(-(elo - 250) / 450),                      // centipawns; high = more random
+    blunder: Math.max(0, Math.min(0.4, 0.4 - (elo - 250) * 0.00035)),  // chance of a uniformly random move
+  };
+}
+function pickMove(cands, elo) {
+  const { temp, blunder } = botParams(elo);
+  if (Math.random() < blunder) return cands[Math.floor(Math.random() * cands.length)];
+  const best = Math.max(...cands.map(c => c.score));
+  const w = cands.map(c => Math.exp(-Math.min(1500, best - c.score) / temp));
+  let x = Math.random() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < cands.length; i++) { x -= w[i]; if (x <= 0) return cands[i]; }
+  return cands[0];
+}
+function botLabel(elo) {
+  if (elo < 600) return 'hangs pieces often';
+  if (elo < 1000) return 'misses some tactics';
+  if (elo < 1400) return 'punishes loose pieces';
+  if (elo < 1800) return 'solid club player';
+  return 'strong';
+}
+const clampScore = s => Math.max(-2000, Math.min(2000, s));
+const pawns = cp => (cp / 100).toFixed(1);
+function uciToSan(fen, uci) { const g = new Chess(fen); const m = g.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || 'q' }); return m ? m.san : uci; }
+
+/* ---------- game state ---------- */
+const engine = new Engine();
+let game, myColor, botElo, fens, selected, busy, over, quiz, lastMove, view, log, evalBefore, quizClean;
+
+function startGame() {
+  game = new Chess(); fens = [game.fen()];
+  myColor = profile.games % 2 === 0 ? 'w' : 'b';
+  botElo = Math.round(profile.rating);
+  over = false; busy = false; quiz = null; selected = null; lastMove = null; view = null;
+  log = { checks: [], moves: [] }; evalBefore = null; quizClean = null;
+  $('quizCard').hidden = true; $('reviewCard').hidden = true; $('resultBox').hidden = true;
+  $('newGameBtn').hidden = true; $('resignBtn').hidden = false;
+  $('statusEyebrow').textContent = `Game ${profile.games + 1} · you play ${myColor === 'w' ? 'White' : 'Black'}`;
+  setMsg('');
+  renderAll();
+  if (game.turn() !== myColor) botMove(); else { evalBefore = grade(game.fen()); yourMove('Your move. Type it below.'); }
+}
+
+function setStatus(t, turn) { const s = $('status'); s.textContent = t; s.classList.toggle('turn', !!turn); }
+function yourMove(t) { setStatus(t, true); renderEntry(); if (matchMedia('(pointer: fine)').matches) $('moveInput').focus(); }
+const fullmove = () => +game.fen().split(' ')[5];
+
+async function botMove() {
+  busy = true; renderEntry(); renderBoard(); setStatus('Bot is thinking…');
+  const t0 = Date.now();
+  const p = botParams(botElo);
+  const cands = await engine.analyze(game.fen(), p.depth, game.moves().length, 2500);
+  const legalUci = new Set(game.moves({ verbose: true }).map(m => m.from + m.to));
+  const legal = cands.filter(c => legalUci.has(c.uci.slice(0, 4)));
+  const pool = legal.length ? legal : cands;
+  const pick = pickMove(pool, botElo);
+  await new Promise(r => setTimeout(r, Math.max(0, 450 - (Date.now() - t0))));
+  const mv = game.move({ from: pick.uci.slice(0, 2), to: pick.uci.slice(2, 4), promotion: pick.uci[4] || 'q' });
+  fens.push(game.fen()); lastMove = mv; busy = false;
+  renderAll();
+  if (checkOver()) return;
+  evalBefore = grade(game.fen()); // runs while the player thinks
+  if (fullmove() >= QUIZ_FROM_MOVE) startQuiz(); else { quizClean = null; yourMove('Your move. Type it below.'); }
+}
+
+/* Each player move is graded with its own fixed-depth search before and after, so grading doesn't depend on the bot's strength. */
+const grade = fen => engine.analyze(fen, 12, 1, 1200).then(r => (r.length ? Math.max(...r.map(c => c.score)) : null));
+
+function playerMove(mv) {
+  const fenBefore = game.fen(), number = fullmove();
+  const played = game.move(mv.san);
+  if (!played) return false;
+  const entry = { number, san: played.san, from: played.from, to: played.to, fenBefore, quizClean, loss: null, ply: game.history().length - 1 };
+  const before = evalBefore || grade(fenBefore), after = game.game_over() ? Promise.resolve(null) : grade(game.fen());
+  entry.done = Promise.all([before, after]).then(([b, a]) => {
+    if (b != null && a != null) entry.loss = Math.max(0, clampScore(b) - clampScore(-a));
+    renderMoves();
+  });
+  log.moves.push(entry);
+  evalBefore = null;
+  fens.push(game.fen()); lastMove = played; selected = null;
+  renderAll();
+  if (!checkOver()) botMove();
+  return true;
+}
+
+function checkOver() {
+  if (!game.game_over()) return false;
+  let score, text;
+  if (game.in_checkmate()) { const iLost = game.turn() === myColor; score = iLost ? 0 : 1; text = iLost ? 'Checkmate. The bot wins.' : 'Checkmate. You win!'; }
+  else { score = 0.5; text = game.in_stalemate() ? 'Stalemate. Draw.' : game.in_threefold_repetition() ? 'Draw by repetition.' : game.insufficient_material() ? 'Draw: not enough material to mate.' : 'Draw.'; }
+  finish(score, text);
+  return true;
+}
+
+async function finish(score, text) {
+  over = true; quiz = null; $('quizCard').hidden = true; setMsg('');
+  const gameLog = log;
+  const before = profile.rating;
+  const expected = 1 / (1 + Math.pow(10, (botElo - before) / 400));
+  const k = profile.games < 10 ? 60 : 32;
+  profile.rating = Math.max(100, Math.round(before + k * (score - expected)));
+  profile.games++; if (score === 1) profile.wins++; else if (score === 0) profile.losses++; else profile.draws++;
+  save();
+  const d = profile.rating - before;
+  const box = $('resultBox'); box.hidden = false;
+  box.innerHTML = `<div class="result">${esc(text)}</div><div>Rating ${before} → <b>${profile.rating}</b> <span class="${d >= 0 ? 'up' : 'down'}">(${d >= 0 ? '+' : ''}${d})</span>. Next bot: ${profile.rating}.</div>`;
+  $('newGameBtn').hidden = false; $('resignBtn').hidden = true;
+  renderAll();
+  setStatus('Game over. Preparing your review…');
+  await Promise.all(gameLog.moves.map(m => m.done));
+  if (log !== gameLog) return; // a new game started meanwhile
+  setStatus('Game over. Your review is below.');
+  renderMoves(); renderReview();
+}
+
+/* ---------- quiz ---------- */
+const list = arr => arr.length ? '<ul>' + arr.map(x => `<li>${x}</li>`).join('') + '</ul>' : '';
+
+async function startQuiz() {
+  busy = true; renderEntry();
+  const m = mapOf(game), me = myColor, opp = other(myColor);
+  const unlocked = id => profile.rating >= CHECKS.find(c => c.id === id).at;
+  const wanted = CHECKS.filter(c => unlocked(c.id) && (!mastered(c.id) || Math.random() < 0.35)).map(c => c.id);
+  if (!wanted.length) wanted.push('threats');
+  const qs = [];
+
+  if (wanted.includes('threats')) {
+    const before = mapOf(new Chess(fens[fens.length - 2]));
+    const threats = [];
+    for (const s in m) {
+      if (m[s].color !== me) continue;
+      const now = attackersOf(m, s, opp), was = before[s] && before[s].color === me ? attackersOf(before, s, opp) : [];
+      const fresh = now.filter(a => a === lastMove.to || !was.includes(a));
+      if (!fresh.length) continue;
+      if (m[s].type === 'k') { threats.push({ sq: s, why: `your king on ${s} is in check from the ${pname(m, fresh[0])}` }); continue; }
+      const att = fresh.reduce((a, x) => (VAL[m[x].type] < VAL[m[a].type] ? x : a), fresh[0]);
+      const defended = attackersOf(m, s, me).length > 0;
+      if (!defended) threats.push({ sq: s, why: `your ${pname(m, s)} is now attacked by the ${pname(m, att)} and not defended` });
+      else if (VAL[m[att].type] < VAL[m[s].type]) threats.push({ sq: s, why: `your ${pname(m, s)} is now attacked by the ${pname(m, att)}, which is worth less` });
+    }
+    qs.push({
+      id: 'threats', mode: 'squares', title: 'Threats',
+      prompt: `Your opponent played <b>${esc(lastMove.san)}</b>. Tap every one of your pieces it now <b>threatens</b>: your king if it’s check, and any piece it newly attacks that is undefended or worth more than the attacker.`,
+      help: 'Include attacks along a line the move opened. Tap “No threats” if there are none.',
+      hint: `Look at every square the ${NAME[lastMove.piece]} on ${lastMove.to} can reach now, and check whether it moved out of the way of another piece. Then ask of each attacked piece: is it defended, and is the attacker cheaper?`,
+      answer: threats, emptyLabel: 'No threats',
+    });
+  }
+  if (wanted.includes('danger')) qs.push({
+    id: 'danger', mode: 'squares', title: 'Safety',
+    prompt: 'Tap each of your pieces that is <b>in danger</b>: attacked and not defended, or attacked by a cheaper piece.',
+    help: 'Kings don’t count here. Tap “All safe” if nothing is hanging.',
+    hint: 'Go piece by piece: count who attacks it and who defends it, and compare piece values (pawn 1, knight/bishop 3, rook 5, queen 9).',
+    answer: enPrise(m, me, me), emptyLabel: 'All safe',
+  });
+  if (wanted.includes('chances')) qs.push({
+    id: 'chances', mode: 'squares', title: 'Opportunities',
+    prompt: 'Tap each <b>enemy</b> piece you could win: one you attack that is undefended, or that is worth more than your cheapest attacker.',
+    help: 'Tap “Nothing to win” if there is none.',
+    hint: 'Look at every capture you have. For each, ask: can they recapture, and is my piece cheaper than theirs?',
+    answer: enPrise(m, opp, me), emptyLabel: 'Nothing to win',
+  });
+  if (wanted.includes('candidates') && engine.ready) {
+    setStatus('Coach is preparing the position check…');
+    const fen = game.fen();
+    const res = (await engine.analyze(fen, 10, game.moves().length, 2500)).sort((a, b) => b.score - a.score);
+    const best = res[0], worse = res.filter(c => best.score - c.score >= 150);
+    if (best && worse.length >= 2) {
+      const picks = [best, ...worse.sort(() => Math.random() - .5).slice(0, 2)].sort(() => Math.random() - .5);
+      const fmt = s => Math.abs(s) >= 90000 ? 'the game (it allows mate)' : `about ${pawns(s)} pawns`;
+      qs.push({
+        id: 'candidates', mode: 'choice', title: 'Candidate moves',
+        prompt: 'Which of these moves is best?', help: 'Use what you found in the first checks.',
+        hint: 'Rule out any move that leaves a piece hanging or ignores the threat you found.',
+        options: picks.map(c => ({ san: uciToSan(fen, c.uci), uci: c.uci, best: c === best })),
+        explain: picks.map(c => c === best ? `<code>${esc(uciToSan(fen, c.uci))}</code> is best.` : `<code>${esc(uciToSan(fen, c.uci))}</code> gives away ${fmt(best.score - c.score)}.`),
+      });
+    }
+  }
+  if (!qs.length) { busy = false; quizClean = null; yourMove('Your move. Type it below.'); renderBoard(); return; }
+
+  quiz = { qs, idx: 0, tries: 0, sel: new Set(), choice: null, firstPick: null, state: 'asking', results: [] };
+  busy = false;
+  setStatus('Assess the position before you move.');
+  $('quizCard').hidden = false;
+  renderQuiz(); renderBoard(); renderEntry();
+}
+
+function currentQ() { return quiz && quiz.qs[quiz.idx]; }
+
+function submitAnswer(empty) {
+  const q = currentQ();
+  let correct;
+  if (q.mode === 'squares') {
+    if (empty) quiz.sel.clear();
+    const want = new Set(q.answer.map(a => a.sq));
+    correct = want.size === quiz.sel.size && [...want].every(s => quiz.sel.has(s));
+    if (quiz.firstPick == null) quiz.firstPick = [...quiz.sel];
+  } else {
+    if (quiz.choice == null) return;
+    correct = q.options[quiz.choice].best;
+    if (quiz.firstPick == null) quiz.firstPick = q.options[quiz.choice].san;
+  }
+  quiz.tries++;
+  if (correct) { record(q, quiz.tries === 1); quiz.state = 'right'; }
+  else if (quiz.tries === 1) quiz.state = 'retry';
+  else { record(q, false); quiz.state = 'reveal'; }
+  renderQuiz(); renderBoard();
+}
+
+function record(q, first) {
+  profile.asked++; if (first) profile.firstTry++;
+  const b = profile.byCheck[q.id] || { asked: 0, first: 0 }; b.asked++; if (first) b.first++; profile.byCheck[q.id] = b;
+  profile.recent[q.id] = [...(profile.recent[q.id] || []), first].slice(-15);
+  quiz.results.push(first); save(); renderStats(); renderChecklist();
+  log.checks.push({
+    number: fullmove(), fen: game.fen(), last: lastMove ? { from: lastMove.from, to: lastMove.to } : null,
+    id: q.id, title: q.title, mode: q.mode, first, prompt: q.prompt,
+    want: q.mode === 'squares' ? q.answer.map(a => a.sq) : null,
+    reasons: q.mode === 'squares' ? q.answer.map(a => cap1(a.why) + '.') : q.explain,
+    picked: quiz.firstPick, best: q.mode === 'choice' ? q.options.find(o => o.best) : null,
+  });
+}
+
+function nextQuestion() {
+  quiz.idx++; quiz.tries = 0; quiz.sel = new Set(); quiz.choice = null; quiz.firstPick = null; quiz.state = 'asking';
+  if (quiz.idx >= quiz.qs.length) {
+    quizClean = quiz.results.every(Boolean);
+    quiz = null; $('quizCard').hidden = true;
+    renderBoard();
+    yourMove(quizClean ? 'Clean assessment. Type your move.' : 'Assessment done. Type your move.');
+    return;
+  }
+  renderQuiz(); renderBoard();
+}
+
+function renderQuiz() {
+  const q = currentQ(); if (!q) return;
+  $('quizEyebrow').textContent = `Position check · move ${fullmove()} · ${quiz.idx + 1} of ${quiz.qs.length}`;
+  $('quizSteps').innerHTML = quiz.qs.map((_, i) => `<span class="${i < quiz.idx ? 'done' : i === quiz.idx ? 'now' : ''}"></span>`).join('');
+  $('qTitle').textContent = q.title;
+  $('qPrompt').innerHTML = q.prompt;
+  $('qHelp').textContent = q.help;
+  const done = quiz.state === 'right' || quiz.state === 'reveal';
+  $('qPicked').textContent = q.mode === 'squares' ? (quiz.sel.size ? 'Selected: ' + [...quiz.sel].sort().join(', ') : 'Nothing selected yet. Tap pieces on the board.') : '';
+  const ch = $('qChoices'); ch.innerHTML = '';
+  if (q.mode === 'choice') q.options.forEach((o, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn choice' + (quiz.choice === i ? ' chosen' : ''); b.textContent = o.san; b.disabled = done;
+    b.onclick = () => { quiz.choice = i; renderQuiz(); }; ch.appendChild(b);
+  });
+  const fb = $('qFeedback'); fb.hidden = quiz.state === 'asking'; fb.className = 'feedback';
+  const reasons = q.mode === 'squares' ? list(q.answer.map(a => esc(cap1(a.why)) + '.')) : list(q.explain);
+  if (quiz.state === 'right') { fb.classList.add('good'); fb.innerHTML = (quiz.tries === 1 ? '<b>Correct.</b>' : '<b>Correct on the second try.</b>') + (reasons || ' Nothing to find here.'); }
+  else if (quiz.state === 'retry') { fb.classList.add('warn'); fb.innerHTML = `<b>Not quite. One more try.</b> ${q.hint}`; }
+  else if (quiz.state === 'reveal') { fb.classList.add('bad'); fb.innerHTML = (q.mode === 'choice' ? '<b>Not this time.</b>' : '<b>Here’s what was there.</b> Solid outlines were correct, dashed ones you missed, red ones were wrong.') + (reasons || ' Nothing at all.'); }
+  const bt = $('qButtons'); bt.innerHTML = '';
+  const mk = (label, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ' + cls; b.textContent = label; b.onclick = fn; bt.appendChild(b); return b; };
+  if (done) mk(quiz.idx + 1 < quiz.qs.length ? 'Next check' : 'Start my move', 'primary', nextQuestion).focus();
+  else if (q.mode === 'squares') { mk('Submit', 'primary', () => submitAnswer(false)).disabled = !quiz.sel.size; mk(q.emptyLabel, '', () => submitAnswer(true)); }
+  else mk('Submit', 'primary', () => submitAnswer(false)).disabled = quiz.choice == null;
+}
+
+/* ---------- post-game review ---------- */
+let reviewItems = [], reviewOn = -1;
+function describeSquares(fen, sqs, owner) {
+  const m = mapOf(new Chess(fen));
+  return sqs.map(s => m[s] ? `${m[s].color === owner ? 'your' : 'their'} ${NAME[m[s].type]} on ${s}` : s).join(', ');
+}
+function buildReview() {
+  const items = [];
+  for (const c of log.checks) {
+    if (c.first) continue;
+    let text;
+    if (c.mode === 'squares') {
+      const picked = new Set(c.picked || []), want = new Set(c.want);
+      const missed = c.want.filter(s => !picked.has(s)), wrong = [...picked].filter(s => !want.has(s));
+      const parts = [];
+      if (missed.length) parts.push(`missed ${describeSquares(c.fen, missed, myColor)}`);
+      if (wrong.length) parts.push(want.size ? `wrongly picked ${describeSquares(c.fen, wrong, myColor)}` : `picked ${describeSquares(c.fen, wrong, myColor)}, but there was nothing to find`);
+      text = cap1(parts.join('; ') || 'answered incorrectly');
+    } else text = `Picked ${c.picked}; the best was ${c.best.san}`;
+    items.push({ kind: 'check', number: c.number, order: 0, c, html: `<span class="pill check">${esc(c.title)}</span>${esc(text)}.` });
+  }
+  for (const mv of log.moves) {
+    if (mv.loss == null || mv.loss < MISTAKE) continue;
+    const kind = mv.loss >= BLUNDER ? 'blunder' : 'mistake';
+    const after = mv.quizClean === true ? ' right after a clean assessment' : mv.quizClean === false ? ' after an assessment with misses' : '';
+    items.push({ kind, number: mv.number, order: 1, mv, html: `<span class="pill ${kind}">${kind}</span>You played <b>${esc(mv.san)}</b>, giving away about ${pawns(mv.loss)} pawns${after}.` });
+  }
+  return items.sort((a, b) => a.number - b.number || a.order - b.order);
+}
+function renderReview() {
+  reviewItems = buildReview(); reviewOn = -1; view = null;
+  const checks = log.checks.length, firsts = log.checks.filter(c => c.first).length;
+  const by = {}; for (const c of log.checks) { by[c.title] = by[c.title] || [0, 0]; by[c.title][1]++; if (c.first) by[c.title][0]++; }
+  const weakest = Object.entries(by).filter(([, [f, n]]) => f < n).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1])[0];
+  const blunders = log.moves.filter(m => m.loss >= BLUNDER).length, mistakes = log.moves.filter(m => m.loss >= MISTAKE && m.loss < BLUNDER).length;
+  const afterClean = log.moves.filter(m => m.loss >= BLUNDER && m.quizClean === true).length;
+  const lines = [];
+  lines.push(checks ? `You answered <b>${firsts} of ${checks}</b> checks right first time.` : 'The game ended before any position checks.');
+  if (weakest) lines.push(`Weakest check: <b>${esc(weakest[0])}</b> (${weakest[1][0]} of ${weakest[1][1]}).`);
+  lines.push(`Blunders: <b>${blunders}</b> · mistakes: <b>${mistakes}</b>.`);
+  if (afterClean) lines.push(`${afterClean === 1 ? 'One blunder' : afterClean + ' blunders'} came right after a clean assessment: the checks found the danger, so look at what your own move does before you play it.`);
+  $('reviewSum').innerHTML = lines.join(' ');
+  $('reviewHead').textContent = reviewItems.length ? `${reviewItems.length} thing${reviewItems.length === 1 ? '' : 's'} to look at` : 'Clean game';
+  const ul = $('reviewList'); ul.innerHTML = '';
+  if (!reviewItems.length) ul.innerHTML = '<li class="note">Every check right first time and no blunders found. Nice work.</li>';
+  reviewItems.forEach((it, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<button type="button" class="review-item"><span class="mv">Move ${it.number}</span><span class="what">${it.html}</span></button>`;
+    li.firstChild.onclick = () => openReview(i);
+    ul.appendChild(li);
+  });
+  $('reviewDetail').hidden = true; $('reviewBack').hidden = true;
+  $('reviewCard').hidden = false;
+}
+async function openReview(i) {
+  reviewOn = i; const it = reviewItems[i];
+  [...$('reviewList').querySelectorAll('.review-item')].forEach((b, j) => b.classList.toggle('on', j === i));
+  const det = $('reviewDetail'); det.hidden = false; $('reviewBack').hidden = false;
+  if (it.kind === 'check') {
+    const c = it.c, marks = {};
+    if (c.mode === 'squares') {
+      const picked = new Set(c.picked || []), want = new Set(c.want);
+      for (const s of want) marks[s] = picked.has(s) ? 'good' : 'miss';
+      for (const s of picked) if (!want.has(s)) marks[s] = 'bad';
+    } else { marks[c.best.uci.slice(0, 2)] = 'best'; marks[c.best.uci.slice(2, 4)] = 'best'; }
+    view = { fen: c.fen, marks, last: c.last };
+    det.innerHTML = `<b>Move ${c.number}, ${esc(c.title)}.</b> ${c.prompt}` +
+      (c.mode === 'squares' ? `<div class="note">Solid green: you found it. Dashed: you missed it. Red: not a correct pick.</div>${list(c.reasons.map(esc)) || '<p>There was nothing to find.</p>'}` : list(c.reasons));
+  } else {
+    const mv = it.mv;
+    view = { fen: mv.fenBefore, marks: { [mv.from]: 'bad', [mv.to]: 'bad' }, last: null };
+    det.innerHTML = `<b>Move ${mv.number}: you played <code>${esc(mv.san)}</code></b> (red), losing about ${pawns(mv.loss)} pawns. <span id="betterMove">Finding a better move…</span>`;
+    renderBoard();
+    const res = await engine.analyze(mv.fenBefore, 12, 1, 1500);
+    if (reviewOn !== i) return;
+    const best = res.sort((a, b) => b.score - a.score)[0], el = $('betterMove');
+    if (best && el && uciToSan(mv.fenBefore, best.uci) === mv.san) el.textContent = 'On a longer look the engine rates this move close to best, so treat this one as borderline.';
+    else if (best && el) { el.innerHTML = `A better move was <code>${esc(uciToSan(mv.fenBefore, best.uci))}</code> (double green outline).`; view.marks[best.uci.slice(0, 2)] = 'best'; view.marks[best.uci.slice(2, 4)] = 'best'; renderBoard(); }
+  }
+  renderBoard();
+}
+function closeReview() {
+  view = null; reviewOn = -1;
+  [...$('reviewList').querySelectorAll('.review-item')].forEach(b => b.classList.remove('on'));
+  $('reviewDetail').hidden = true; $('reviewBack').hidden = true; renderBoard();
+}
+
+/* ---------- rendering ---------- */
+function renderBoard() {
+  const el = $('board'); el.innerHTML = '';
+  const g = view ? new Chess(view.fen) : game;
+  const q = view ? null : currentQ(), m = mapOf(g);
+  el.classList.toggle('locked', busy || over || !!view);
+  el.classList.toggle('quiz', !!quiz && !view);
+  el.classList.toggle('viewing', !!view);
+  el.setAttribute('aria-label', view ? 'Board, reviewing an earlier position' : 'Board');
+  const targets = selected && !view ? game.moves({ square: selected, verbose: true }) : [];
+  const inCheck = g.in_check() ? Object.keys(m).find(s => m[s].type === 'k' && m[s].color === g.turn()) : null;
+  const want = q && q.mode === 'squares' ? new Set(q.answer.map(a => a.sq)) : new Set();
+  const revealed = quiz && (quiz.state === 'reveal' || quiz.state === 'right');
+  const last = view ? view.last : lastMove;
+  for (let row = 0; row < 8; row++) for (let col = 0; col < 8; col++) {
+    const f = myColor === 'w' ? col : 7 - col, r = myColor === 'w' ? 7 - row : row, s = sqName(f, r);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sq ' + ((f + r) % 2 ? 'light' : 'dark');
+    b.setAttribute('role', 'gridcell');
+    const p = m[s];
+    b.setAttribute('aria-label', s + (p ? ` ${p.color === 'w' ? 'white' : 'black'} ${NAME[p.type]}` : ''));
+    if (last && (s === last.from || s === last.to)) b.classList.add('last');
+    if (s === selected && !view) b.classList.add('sel');
+    if (s === inCheck) b.classList.add('check');
+    if (col === 0) b.insertAdjacentHTML('beforeend', `<span class="coord r">${r + 1}</span>`);
+    if (row === 7) b.insertAdjacentHTML('beforeend', `<span class="coord f">${FILES[f]}</span>`);
+    if (p) b.insertAdjacentHTML('beforeend', `<span class="piece ${p.color}">${GLYPH[p.type]}︎</span>`);
+    if (targets.some(x => x.to === s)) b.insertAdjacentHTML('beforeend', p ? '<span class="ring"></span>' : '<span class="dot"></span>');
+    if (view && view.marks[s]) b.insertAdjacentHTML('beforeend', `<span class="mark ${view.marks[s]}"></span>`);
+    if (q && q.mode === 'squares') {
+      const picked = quiz.sel.has(s);
+      if (revealed) {
+        if (want.has(s) && picked) b.insertAdjacentHTML('beforeend', '<span class="mark good"></span>');
+        else if (want.has(s)) b.insertAdjacentHTML('beforeend', '<span class="mark miss"></span>');
+        else if (picked) b.insertAdjacentHTML('beforeend', '<span class="mark bad"></span>');
+      } else if (picked) b.insertAdjacentHTML('beforeend', '<span class="mark"></span>');
+    }
+    b.onclick = () => onSquare(s);
+    el.appendChild(b);
+  }
+}
+
+/* Taps answer quiz questions, or show where a piece can go. Moves are only ever typed. */
+function onSquare(s) {
+  if (over || busy || view) return;
+  if (quiz) {
+    const q = currentQ();
+    if (q.mode !== 'squares' || quiz.state === 'right' || quiz.state === 'reveal') return;
+    if (!game.get(s)) return;
+    quiz.sel.has(s) ? quiz.sel.delete(s) : quiz.sel.add(s);
+    renderQuiz(); renderBoard(); return;
+  }
+  if (game.turn() !== myColor) return;
+  const p = game.get(s);
+  selected = p && p.color === myColor && selected !== s ? s : null;
+  renderBoard();
+  if (selected) setMsg(`Showing where your ${NAME[p.type]} on ${s} can go. Type the move to play it.`);
+}
+
+const canType = () => !over && !busy && !quiz && !view && game && game.turn() === myColor;
+function setMsg(html, cls) { const el = $('moveMsg'); el.innerHTML = html; el.className = 'entry-msg' + (cls ? ' ' + cls : ''); }
+function renderEntry() {
+  const ok = canType(), inp = $('moveInput');
+  inp.disabled = !ok; $('playBtn').disabled = !ok;
+  [...$('keys').children].forEach(b => (b.disabled = !ok));
+  $('moveForm').classList.toggle('live', ok);
+  inp.placeholder = ok ? 'e.g. Nf3, exd5, O-O' : over ? 'Game over' : quiz ? 'Finish the position check first' : busy ? 'Wait for the bot' : 'Wait for your turn';
+}
+const KEYS = ['K', 'Q', 'R', 'B', 'N', 'x', '=', '+', 'O-O', 'O-O-O', '⌫'];
+function buildKeys() {
+  const wrap = $('keys');
+  KEYS.forEach(k => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = k;
+    b.setAttribute('aria-label', k === '⌫' ? 'Delete last character' : `Insert ${k}`);
+    b.onclick = () => {
+      const inp = $('moveInput'); if (inp.disabled) return;
+      if (k === '⌫') inp.value = inp.value.slice(0, -1);
+      else if (k.startsWith('O')) inp.value = k;
+      else inp.value += k;
+      inp.focus();
+    };
+    wrap.appendChild(b);
+  });
+}
+$('moveForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!canType()) return;
+  const inp = $('moveInput'), res = readMove(inp.value, game);
+  if (res.error) { setMsg(res.error, 'bad'); inp.select(); return; }
+  inp.value = '';
+  setMsg(`Played <code>${esc(res.move.san)}</code>.` + (res.note ? ' ' + res.note : ''), 'good');
+  playerMove(res.move);
+});
+
+function renderMoves() {
+  const h = game.history(), tag = {};
+  for (const mv of log.moves) if (mv.loss != null && mv.loss >= MISTAKE) tag[mv.ply] = mv.loss >= BLUNDER ? 'blunder' : 'mistake';
+  const cell = i => h[i] ? `<span class="${tag[i] || ''}">${esc(h[i])}${tag[i] === 'blunder' ? '??' : tag[i] === 'mistake' ? '?' : ''}</span>` : '<span></span>';
+  let html = '';
+  for (let i = 0; i < h.length; i += 2) html += `<span class="n">${i / 2 + 1}.</span>${cell(i)}${cell(i + 1)}`;
+  const el = $('moves'); el.innerHTML = html || '<span class="n"></span><span style="grid-column: span 2; color: var(--muted)">No moves yet.</span>'; el.scrollTop = el.scrollHeight;
+}
+function renderMaterial() {
+  const m = mapOf(game); let d = 0;
+  for (const s in m) if (m[s].type !== 'k') d += (m[s].color === myColor ? 1 : -1) * VAL[m[s].type];
+  $('material').textContent = d === 0 ? 'Material even' : d > 0 ? `You are up ${d}` : `You are down ${-d}`;
+}
+function renderStats() {
+  const pct = (a, b) => (b ? Math.round((100 * a) / b) + '%' : '–');
+  const cells = [
+    ['Record (W-L-D)', `${profile.wins}-${profile.losses}-${profile.draws}`],
+    ['First-try accuracy', pct(profile.firstTry, profile.asked)],
+    ...CHECKS.map(c => { const b = profile.byCheck[c.id]; return [c.title, b ? pct(b.first, b.asked) : '–']; }),
+  ];
+  $('stats').innerHTML = cells.map(([k, v]) => `<div class="stat"><span class="v">${v}</span><span class="k">${k}</span></div>`).join('');
+}
+function renderChecklist() {
+  $('checklist').innerHTML = CHECKS.map(c => {
+    const open = profile.rating >= c.at;
+    const tag = !open ? `<span class="tag locked">from ${c.at}</span>` : mastered(c.id) ? '<span class="tag mastered">mastered</span>' : '';
+    return `<li class="${open ? '' : 'off'}"><b>${c.title}.</b> ${c.text}${tag}</li>`;
+  }).join('');
+}
+function renderHeader() {
+  $('myRating').textContent = profile.rating; $('botRating').textContent = botElo; $('gamesPlayed').textContent = profile.games;
+  $('topInfo').textContent = `${botElo} · ${botLabel(botElo)}`;
+  $('bottomInfo').textContent = `${profile.rating}`;
+}
+function renderAll() { renderBoard(); renderMoves(); renderMaterial(); renderStats(); renderChecklist(); renderHeader(); renderEntry(); }
+
+$('resignBtn').onclick = () => { if (!over && !busy) finish(0, 'You resigned.'); };
+$('newGameBtn').onclick = startGame;
+$('reviewBack').onclick = closeReview;
+window.__blunderCheck = { readMove, Chess }; // used by the test script
+
+buildKeys();
+engine.init.then(ok => { $('engineState').textContent = ok ? 'Stockfish ready' : 'Simple engine (Stockfish unavailable)'; });
+startGame();
+})();
+</script>
