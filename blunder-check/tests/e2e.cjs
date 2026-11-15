@@ -106,12 +106,12 @@ const check = (ok, label) => { console.log((ok ? 'PASS ' : 'FAIL ') + label); if
     await items[0].click();
     await page.waitForTimeout(300);
     check(await page.isVisible('#reviewDetail'), 'review item opens detail');
-    check(await page.$eval('#board', b => b.classList.contains('viewing')), 'board shows the reviewed position');
+    check(await page.$eval('#boardFrame', b => b.classList.contains('viewing')), 'board shows the reviewed position');
     const blunder = await page.$('#reviewList .review-item:has(.pill.blunder), #reviewList .review-item:has(.pill.mistake)');
     if (blunder) { await blunder.click(); await page.waitForFunction(() => !document.getElementById('reviewDetail').textContent.includes('Finding'), null, { timeout: 15000 }); console.log('  blunder detail:', (await page.textContent('#reviewDetail')).trim()); }
     await page.screenshot({ path: OUT + '/shot-review.png' });
     await page.click('#reviewBack');
-    check(!(await page.$eval('#board', b => b.classList.contains('viewing'))), 'back returns to final position');
+    check(!(await page.$eval('#boardFrame', b => b.classList.contains('viewing'))), 'back returns to final position');
   }
   await page.setViewportSize({ width: 400, height: 900 });
   await page.screenshot({ path: OUT + '/shot-phone.png', fullPage: true });

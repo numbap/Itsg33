@@ -6,7 +6,7 @@ A browser chess trainer. You play a Stockfish bot that starts at 250 Elo and tra
 
 | File | What it is |
 | --- | --- |
-| `blunder-check.html` | The whole app: board, quiz, bot, review. Loads chess.js from cdnjs. |
+| `blunder-check.html` | The whole app: board, quiz, bot, review. Loads chess.js from cdnjs. The pieces are the cburnett set by Colin M.L. Burnett (GPLv2+), taken from the Lichess repository and embedded as SVG. |
 | `stockfish.js` | Stockfish 10 compiled to JavaScript (GPL-3.0), run in a web worker. |
 | `tests/e2e.cjs` | Playwright test: notation parser cases, a typed game, the quiz lock and the review. |
 
