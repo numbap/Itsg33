@@ -4375,6 +4375,101 @@
   ]
  },
  {
+  "id": "w167",
+  "name": "King's Gambit Promotion",
+  "opening": "King's Gambit (Mad Dog)",
+  "family": "Open Games",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 e5 f4 f5 exf5 exf4 Qh5+ g6 fxg6 Nf6",
+  "idea": "Black's knight attacks your queen. Your g6 pawn is two steps from h8.",
+  "lines": [
+   {
+    "moves": "g7+ Nxh5 gxh8=Q",
+    "label": "Black takes the queen",
+    "note": "g7+ uncovered a check, and the pawn takes the h8 rook and promotes. You get your queen back with a rook extra."
+   }
+  ]
+ },
+ {
+  "id": "w168",
+  "name": "Réti Queen Fork",
+  "opening": "Réti Opening",
+  "family": "Flank Openings",
+  "side": "w",
+  "level": 1,
+  "setup": "Nf3 d5 c4 d4 b4 e5 Nxe5 Bxb4",
+  "idea": "Black's bishop took b4 with check in mind, but it's undefended.",
+  "lines": [
+   {
+    "moves": "Qa4+ Nc6 Nxc6",
+    "label": "Black blocks with the knight",
+    "note": "The check forks the king and the b4 bishop. Take the blocker first."
+   },
+   {
+    "moves": "Qa4+ Nd7 Nxd7",
+    "label": "Black blocks with the knight",
+    "note": "The check forks the king and the b4 bishop. Take the blocker first."
+   }
+  ]
+ },
+ {
+  "id": "w169",
+  "name": "QGD b2 Queen Trap",
+  "opening": "Queen's Gambit (Exchange)",
+  "family": "Queen's Gambit",
+  "side": "w",
+  "level": 2,
+  "setup": "d4 d5 c4 Nf6 cxd5 Qxd5 Nc3 Qa5 Bd2 Qb6 Nf3 Qxb2",
+  "idea": "Black's queen grabbed b2. It's deep in your half with few squares.",
+  "lines": [
+   {
+    "moves": "Rb1 Qa3 Nb5",
+    "label": "The queen runs to a3",
+    "note": "Nb5 hits the queen and c7. It's trapped."
+   },
+   {
+    "moves": "Rb1 Qxc3 Bxc3",
+    "label": "Black gives up the queen",
+    "note": "The queen took the knight and was lost for it."
+   }
+  ]
+ },
+ {
+  "id": "w170",
+  "name": "Wayward Queen f2 Raid",
+  "opening": "King's Pawn (Wayward Queen Attack)",
+  "family": "Other 1.e4",
+  "side": "b",
+  "level": 1,
+  "setup": "e4 e5 Qh5 Qf6 d3 Bc5 Bg5",
+  "idea": "White's bishop attacks your queen, but your queen and bishop both hit f2.",
+  "lines": [
+   {
+    "moves": "Qxf2+ Kd1 Qxf1+ Kd2",
+    "label": "The king steps aside",
+    "note": "You've taken f2 and the f1 bishop with check. Take g2 next: White is lost."
+   }
+  ]
+ },
+ {
+  "id": "w171",
+  "name": "Scandinavian f7 Raid",
+  "opening": "Scandinavian Defense",
+  "family": "Scandinavian",
+  "side": "w",
+  "level": 2,
+  "setup": "e4 d5 exd5 Qxd5 Nc3 Qd8 Bc4 g6 Qf3 Bg7",
+  "idea": "Black fianchettoed and left f7 with only the king to guard it.",
+  "lines": [
+   {
+    "moves": "Qxf7+ Kd7",
+    "label": "The king runs",
+    "note": "Black's king is out in the open. Be6+, Qd5+ or Qe6+ next all win more material."
+   }
+  ]
+ },
+ {
   "id": "m026",
   "name": "Morra f7 Queen Trap",
   "opening": "Smith–Morra Gambit",
